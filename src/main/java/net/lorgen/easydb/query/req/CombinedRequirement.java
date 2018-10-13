@@ -23,6 +23,14 @@ public class CombinedRequirement implements QueryRequirement {
         return requirement2;
     }
 
+    public void setRequirement1(QueryRequirement requirement1) {
+        this.requirement1 = requirement1;
+    }
+
+    public void setRequirement2(QueryRequirement requirement2) {
+        this.requirement2 = requirement2;
+    }
+
     @Override
     public Operator getOperator() {
         return operator;
@@ -40,8 +48,8 @@ public class CombinedRequirement implements QueryRequirement {
     public String toString() {
         return "CombinedRequirement{" +
           "requirement1=" + requirement1 +
-          ", requirement2=" + requirement2 +
           ", operator=" + operator +
+          ", requirement2=" + requirement2 +
           ", wrap=" + wrap +
           '}';
     }

@@ -2,6 +2,8 @@ package net.lorgen.easydb;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -122,5 +124,44 @@ public class StoredItemProfile<T extends StoredItem> {
 
     public WrappedIndex<T>[] getIndices() {
         return indices;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+
+        if (!(o instanceof StoredItemProfile)) return false;
+
+        StoredItemProfile<?> that = (StoredItemProfile<?>) o;
+
+        return new EqualsBuilder()
+          .append(typeClass, that.typeClass)
+          .append(keys, that.keys)
+          .append(fields, that.fields)
+          .append(autoIncrementField, that.autoIncrementField)
+          .append(indices, that.indices)
+          .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 37)
+          .append(typeClass)
+          .append(keys)
+          .append(fields)
+          .append(autoIncrementField)
+          .append(indices)
+          .toHashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "StoredItemProfile{" +
+          "typeClass=" + typeClass +
+          ", keys=" + Arrays.toString(keys) +
+          ", fields=" + Arrays.toString(fields) +
+          ", autoIncrementField=" + autoIncrementField +
+          ", indices=" + Arrays.toString(indices) +
+          '}';
     }
 }

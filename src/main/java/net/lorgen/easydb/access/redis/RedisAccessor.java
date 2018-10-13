@@ -66,7 +66,7 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
     private final StorageManager<T> manager;
     private final String table;
 
-    public RedisAccessor(RedisConfig config, StorageManager<T> manager, String table) {
+    public RedisAccessor(RedisConfiguration config, StorageManager<T> manager, String table) {
         this.manager = manager;
         this.table = table;
 

@@ -1,13 +1,21 @@
 package net.lorgen.easydb;
 
 import net.lorgen.easydb.access.redis.RedisAccessor;
+import net.lorgen.easydb.access.redis.RedisConfiguration;
 import net.lorgen.easydb.access.sql.SQLAccessor;
+import net.lorgen.easydb.access.sql.SQLConfiguration;
+import net.lorgen.easydb.configuration.DatabaseConfigurationRegistry;
 
 public enum DatabaseType {
     SQL {
         @Override
         public <T extends StoredItem> DatabaseTypeAccessor<T> newAccessor(StorageManager<T> manager, String tableName) {
-            return new SQLAccessor<>(null, manager, tableName);
+            SQLConfiguration configuration = DatabaseConfigurationRegistry.getInstance().getConfiguration(SQL);
+            if (configuration == null) {
+                throw new IllegalStateException("No configuration registered for database type SQL!");
+            }
+
+            return new SQLAccessor<>(configuration, manager, tableName);
         }
     },
     MONGODB {
@@ -19,7 +27,12 @@ public enum DatabaseType {
     REDIS {
         @Override
         public <T extends StoredItem> DatabaseTypeAccessor<T> newAccessor(StorageManager<T> manager, String tableName) {
-            return new RedisAccessor<>(null, manager, tableName);
+            RedisConfiguration configuration = DatabaseConfigurationRegistry.getInstance().getConfiguration(REDIS);
+            if (configuration == null) {
+                throw new IllegalStateException("No configuration registered for database type REDIS!");
+            }
+
+            return new RedisAccessor<>(configuration, manager, tableName);
         }
     };
 

@@ -1,11 +1,14 @@
 package net.lorgen.easydb.query.traverse;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import net.lorgen.easydb.query.req.CombinedRequirement;
 import net.lorgen.easydb.query.req.QueryRequirement;
 import net.lorgen.easydb.query.req.SimpleRequirement;
-import com.google.common.collect.Lists;
+import org.apache.commons.lang3.Validate;
 
 import java.util.List;
+import java.util.Set;
 
 public class RequirementTraverser {
 
@@ -28,6 +31,8 @@ public class RequirementTraverser {
     }
 
     public void traverse(QueryRequirement requirement) {
+        Validate.notNull(requirement);
+
         if (requirement instanceof SimpleRequirement) {
             for (RequirementCase traversement : this.activeCases) {
                 traversement.getRequirements().add((SimpleRequirement) requirement);
@@ -73,11 +78,23 @@ public class RequirementTraverser {
     }
 
     private void split(QueryRequirement requirement1, QueryRequirement requirement2) {
-        RequirementTraverser other = new RequirementTraverser(this);
-        this.traverse(requirement1);
-        other.traverse(requirement2);
+        // We consider these as their own cases
+        List<RequirementCase> req1Cases = new RequirementTraverser(requirement1).getCases();
+        List<RequirementCase> req2Cases = new RequirementTraverser(requirement2).getCases();
 
-        this.completedCases.addAll(other.completedCases); // Could happen
-        this.activeCases.addAll(other.activeCases);
+        Set<RequirementCase> combined = Sets.newHashSet();
+        combined.addAll(req1Cases);
+        combined.addAll(req2Cases);
+
+        List<RequirementCase> cases = Lists.newArrayList();
+        for (RequirementCase activeCase : this.activeCases) {
+            for (RequirementCase otherCase : combined) {
+                RequirementCase clone = new RequirementCase(activeCase);
+                clone.getRequirements().addAll(otherCase.getRequirements());
+                cases.add(clone);
+            }
+        }
+
+        this.activeCases = cases;
     }
 }

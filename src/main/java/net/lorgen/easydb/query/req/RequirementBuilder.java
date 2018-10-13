@@ -48,10 +48,10 @@ public class RequirementBuilder<T extends StoredItem> {
 
         switch (this.returnOp) {
             case AND:
-                this.returnTo.and(this.req);
+                this.returnTo.and(this.build());
                 break;
             case OR:
-                this.returnTo.or(this.req);
+                this.returnTo.or(this.build());
         }
 
         return this.returnTo;
@@ -167,6 +167,13 @@ public class RequirementBuilder<T extends StoredItem> {
             return this;
         }
 
+        if (this.req instanceof CombinedRequirement
+          && !((CombinedRequirement) this.req).isWrapped()) {
+            QueryRequirement requirement2 = ((CombinedRequirement) this.req).getRequirement2();
+            ((CombinedRequirement) this.req).setRequirement2(new CombinedRequirement(requirement2, Operator.AND, req));
+            return this;
+        }
+
         this.req = new CombinedRequirement(this.req, Operator.AND, req);
         return this;
     }
@@ -174,6 +181,13 @@ public class RequirementBuilder<T extends StoredItem> {
     public RequirementBuilder<T> or(QueryRequirement req) {
         if (this.req == null) {
             this.req = req;
+            return this;
+        }
+
+        if (this.req instanceof CombinedRequirement
+          && !((CombinedRequirement) this.req).isWrapped()) {
+            QueryRequirement requirement2 = ((CombinedRequirement) this.req).getRequirement2();
+            ((CombinedRequirement) this.req).setRequirement2(new CombinedRequirement(requirement2, Operator.OR, req));
             return this;
         }
 
@@ -257,6 +271,10 @@ public class RequirementBuilder<T extends StoredItem> {
         }
 
         return down.closeCurrent(); // Returns this
+    }
+
+    public QueryRequirement build() {
+        return this.req;
     }
 
     // Internals

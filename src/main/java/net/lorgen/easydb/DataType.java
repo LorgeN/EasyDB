@@ -453,4 +453,9 @@ public enum DataType implements FieldSerializer {
 
         return null;
     }
+
+    @Override
+    public String toString() {
+        return "DataType." + this.name();
+    }
 }

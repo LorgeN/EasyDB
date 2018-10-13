@@ -40,9 +40,9 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
     private final HikariDataSource dataSource;
     private final StorageManager<T> manager;
     private final String table;
-    private final SQLConfig sqlConfig;
+    private final SQLConfiguration sqlConfig;
 
-    public SQLAccessor(SQLConfig sqlConfig, StorageManager<T> manager, String table) {
+    public SQLAccessor(SQLConfiguration sqlConfig, StorageManager<T> manager, String table) {
         this.sqlConfig = sqlConfig;
         String host = sqlConfig.getHost();
         int port = sqlConfig.getPort();
