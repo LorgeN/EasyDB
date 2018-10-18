@@ -1,5 +1,6 @@
 package net.lorgen.easydb.test;
 
+import net.lorgen.easydb.DeserializerConstructor;
 import net.lorgen.easydb.Index;
 import net.lorgen.easydb.Persist;
 import net.lorgen.easydb.StorageKey;
@@ -28,4 +29,18 @@ public class TestItem implements StoredItem {
 
     // To test it actually considering the "Persist" annotation for profiling
     private int age;
+
+    @DeserializerConstructor({"id", "username"})
+    public TestItem(int id, String username) {
+        this.id = id;
+        this.username = username;
+    }
+
+    public TestItem(String username, String firstName, String lastName, String email, int age) {
+        this.username = username;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.age = age;
+    }
 }

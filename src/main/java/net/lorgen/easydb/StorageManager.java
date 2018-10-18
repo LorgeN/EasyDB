@@ -1,5 +1,6 @@
 package net.lorgen.easydb;
 
+import net.lorgen.easydb.configuration.ConnectionConfiguration;
 import net.lorgen.easydb.query.Query;
 import net.lorgen.easydb.query.QueryBuilder;
 import net.lorgen.easydb.util.Callback;
@@ -16,6 +17,17 @@ public class StorageManager<T extends StoredItem> {
     private Class<T> typeClass;
     private StoredItemProfile<T> profile;
     private DatabaseTypeAccessor<T> accessor;
+
+    public StorageManager(ConnectionConfiguration configuration, String tableName, Class<T> typeClass, DataAccessFrequency frequency) {
+        this(configuration, tableName, typeClass, frequency.getRecommendedType());
+    }
+
+    public StorageManager(ConnectionConfiguration configuration, String tableName, Class<T> typeClass, DatabaseType type) {
+        this.tableName = tableName;
+        this.typeClass = typeClass;
+        this.profile = new StoredItemProfile<>(this.typeClass);
+        this.accessor = type.newAccessor(configuration, this, this.tableName);
+    }
 
     public StorageManager(String tableName, Class<T> typeClass, DataAccessFrequency frequency) {
         this(tableName, typeClass, frequency.getRecommendedType());
@@ -157,7 +169,7 @@ public class StorageManager<T extends StoredItem> {
 
             T instance;
             if (annotated != null) {
-                PersistentField<T>[] fields = Arrays.stream(annotated.getAnnotation(DeserializerConstructor.class).fields())
+                PersistentField<T>[] fields = Arrays.stream(annotated.getAnnotation(DeserializerConstructor.class).value())
                   .map(name -> this.getProfile().resolveField(name))
                   .toArray(PersistentField[]::new);
 

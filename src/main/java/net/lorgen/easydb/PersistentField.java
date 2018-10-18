@@ -20,6 +20,7 @@ public class PersistentField<T extends StoredItem> {
     private boolean key;
     private boolean autoIncr;
     private boolean index;
+    private boolean unique;
     private int indexId;
 
     public PersistentField(int fieldIndex, Class<T> tClass, Field field) {
@@ -47,6 +48,8 @@ public class PersistentField<T extends StoredItem> {
         if (this.index) {
             this.indexId = field.getAnnotation(Index.class).value();
         }
+
+        this.unique = field.isAnnotationPresent(Unique.class);
 
         StorageKey keyAnnot = field.getAnnotation(StorageKey.class);
         if (keyAnnot == null) {
@@ -135,6 +138,14 @@ public class PersistentField<T extends StoredItem> {
 
     public boolean isAutoIncrement() {
         return autoIncr;
+    }
+
+    public boolean isUnique() {
+        return unique;
+    }
+
+    public void setUnique(boolean unique) {
+        this.unique = unique;
     }
 
     public boolean isIndex() {

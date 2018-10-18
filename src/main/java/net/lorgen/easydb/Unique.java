@@ -5,12 +5,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target(ElementType.CONSTRUCTOR)
+@Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface DeserializerConstructor {
+public @interface Unique {
 
-    /**
-     * @return The fields this constructor requires. Case-sensitive.
-     */
-    String[] value();
 }

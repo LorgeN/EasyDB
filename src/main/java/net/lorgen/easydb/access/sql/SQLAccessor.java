@@ -115,10 +115,6 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
             e.printStackTrace();
         }
 
-        // TODO
-        // Running this at every boot will return errors if the table already exists. I
-        // can't really figure out a good way around it so we will have to look further
-        // into it once we start doing more tests.
         this.createIndices();
     }
 
@@ -137,6 +133,37 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
         try (Connection connection = this.getConnection()) {
             Statement statement = connection.createStatement();
 
+            statement.execute("DROP PROCEDURE IF EXISTS CREATE_INDEX");
+            statement.execute(
+              "CREATE PROCEDURE CREATE_INDEX(" +
+                "    given_database VARCHAR(64)," +
+                "    given_table    VARCHAR(64)," +
+                "    given_index    VARCHAR(64)," +
+                "    given_columns  VARCHAR(64)" +
+                ") BEGIN " +
+                "    DECLARE IndexExists INTEGER;" +
+                "" +
+                "    SELECT COUNT(1) INTO IndexExists" +
+                "    FROM INFORMATION_SCHEMA.STATISTICS" +
+                "    WHERE table_schema = given_database" +
+                "    AND   table_name   = given_table" +
+                "    AND   index_name   = given_index;" +
+                "" +
+                "    IF IndexExists = 0 THEN" +
+                "        SET @sqlstmt = CONCAT('CREATE INDEX ',given_index,' ON '," +
+                "        given_database,'.',given_table,' (',given_columns,')');" +
+                "        PREPARE st FROM @sqlstmt;" +
+                "        EXECUTE st;" +
+                "        DEALLOCATE PREPARE st;" +
+                "    ELSE" +
+                "        SELECT CONCAT('Index ',given_index,' already exists on Table '," +
+                "        given_database,'.',given_table) CreateindexErrorMessage;   " +
+                "    END IF;" +
+                "" +
+                "END");
+
+            String database = "\"" + this.sqlConfig.getDatabase() + "\"";
+
             for (WrappedIndex<T> index : indices) {
                 if (index.getFields().length != 1) {
                     indexMap.put(index.getFields()[0].getIndexId(), index);
@@ -144,16 +171,12 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
                 }
 
                 PersistentField<T> field = index.getFields()[0];
-                statement.addBatch("CREATE INDEX index_" + field.getName() + " ON " + this.getTableName() + "(" + field.getName() + ");");
+                statement.addBatch("CALL CREATE_INDEX(" + database + ", \"" + this.table + "\", \"" + field.getName() + "\", \"" + field.getName() + "\")");
             }
 
             for (Entry<Integer, WrappedIndex<T>> entry : indexMap.entrySet()) {
-                StringBuilder builder = new StringBuilder("CREATE INDEX index_")
-                  .append(entry.getKey())
-                  .append(" ON ")
-                  .append(this.getTableName())
-                  .append("(");
-
+                String name = "index_" + entry.getKey();
+                StringBuilder builder = new StringBuilder();
                 PersistentField<T>[] fields = entry.getValue().getFields();
                 for (int i = 0; i < fields.length; i++) {
                     builder.append(fields[i].getName());
@@ -165,11 +188,16 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
                     builder.append(", ");
                 }
 
-                builder.append(");");
-                statement.addBatch(builder.toString());
+                statement.addBatch("CALL CREATE_INDEX(" + database + ", \"" + this.table + "\", " + name + ", \"" + builder.toString() + "\")");
             }
 
             statement.executeBatch();
+
+            if (this.manager.getProfile().getAutoIncrementField() == null) {
+                return;
+            }
+
+            statement.execute("ALTER TABLE " + this.getTableName() + " AUTO_INCREMENT=1");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -187,7 +215,26 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
               "WHERE TABLE_SCHEMA='" + this.sqlConfig.getDatabase() + "' AND TABLE_NAME='" + this.table + "';");
 
             ResultSet resultSet = statement.executeQuery();
-            return (resultSet == null || !resultSet.next()) ? 1 : (resultSet.getInt(1) + 1);
+            return (resultSet == null || !resultSet.next()) ? 2 : (resultSet.getInt(1));
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return -1;
+        }
+    }
+
+    /**
+     * Synchronous utility method for getting the current AUTO_INCREMENT value, if such a value
+     * is present for this table.
+     *
+     * @return The next current increment column value
+     */
+    public int getCurrentAutoIncrement() {
+        try (Connection connection = this.getConnection()) {
+            PreparedStatement statement = connection.prepareStatement("SELECT `AUTO_INCREMENT` FROM INFORMATION_SCHEMA.TABLES " +
+              "WHERE TABLE_SCHEMA='" + this.sqlConfig.getDatabase() + "' AND TABLE_NAME='" + this.table + "';");
+
+            ResultSet resultSet = statement.executeQuery();
+            return (resultSet == null || !resultSet.next()) ? 1 : (resultSet.getInt(1));
         } catch (SQLException e) {
             e.printStackTrace();
             return -1;
@@ -339,7 +386,7 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
             }
 
             // Update the auto increment field
-            int row = statement.getResultSet().getRow(); // Row should be same as auto increment
+            int row = this.getCurrentAutoIncrement();
             autoIncrementField.set(query.getInstance(), row);
         } catch (SQLException e) {
             throw new SaveQueryException("Statement: " + builder.toString(), e, query);
@@ -433,7 +480,7 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
     }
 
     private String toColumnDeclaration(PersistentField<T> field) {
-        return "`" + field.getName() + "` " + this.getColumnType(field) + (field.isAutoIncrement() ? " UNIQUE AUTO_INCREMENT" : "");
+        return "`" + field.getName() + "` " + this.getColumnType(field) + (field.isAutoIncrement() ? " UNIQUE AUTO_INCREMENT" : (field.isUnique() ? " UNIQUE" : "")));
     }
 
     private String getColumnType(PersistentField<T> field) {

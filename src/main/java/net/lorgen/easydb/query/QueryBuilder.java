@@ -6,8 +6,10 @@ import net.lorgen.easydb.StorageManager;
 import net.lorgen.easydb.StoredItem;
 import net.lorgen.easydb.query.req.QueryRequirement;
 import net.lorgen.easydb.query.req.RequirementBuilder;
+import net.lorgen.easydb.util.Callback;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class QueryBuilder<T extends StoredItem> {
 
@@ -30,9 +32,9 @@ public class QueryBuilder<T extends StoredItem> {
 
         // Even tho we pass an instance of T, we still assign the values as we wish to use
         // them instead of querying upon the instance every time we need a value
-        PersistentField<T>[] keys = this.manager.getProfile().getKeys();
-        for (PersistentField<T> key : keys) {
-            this.set(key, key.get(object));
+        PersistentField<T>[] fields = this.manager.getProfile().getFields();
+        for (PersistentField<T> field : fields) {
+            this.set(field, field.get(object));
         }
 
         return this;
@@ -70,28 +72,44 @@ public class QueryBuilder<T extends StoredItem> {
 
     // Shortcut methods
 
-    public void deleteSync() {
-
+    public void findFirstAsync(Callback<T> callback) {
+        manager.findFirstAsync(this.build(), callback);
     }
 
-    public void deleteAsync() {
-        this.deleteAsync(null);
+    public T findFirstSync() {
+        return manager.findFirstSync(this.build());
     }
 
-    public void deleteAsync(Runnable callback) {
-
+    public void findAllAsync(Callback<List<T>> callback) {
+        manager.findAllAsync(this.build(), callback);
     }
 
-    public void saveSync() {
-
+    public List<T> findAllSync() {
+        return manager.findAllSync(this.build());
     }
 
     public void saveAsync() {
-        this.saveAsync(null);
+        manager.saveAsync(this.build());
     }
 
     public void saveAsync(Runnable callback) {
+        manager.saveAsync(this.build(), callback);
+    }
 
+    public void saveSync() {
+        manager.saveSync(this.build());
+    }
+
+    public void deleteAsync() {
+        manager.deleteAsync(this.build());
+    }
+
+    public void deleteAsync(Runnable callback) {
+        manager.deleteAsync(this.build(), callback);
+    }
+
+    public void deleteSync() {
+        manager.deleteSync(this.build());
     }
 
     // Internals

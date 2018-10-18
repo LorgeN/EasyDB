@@ -78,7 +78,8 @@ public class RequirementTraverser {
     }
 
     private void split(QueryRequirement requirement1, QueryRequirement requirement2) {
-        // We consider these as their own cases
+        // We consider these as their own, standalone requirements (unaffected by the
+        // "surrounding" requirements).
         List<RequirementCase> req1Cases = new RequirementTraverser(requirement1).getCases();
         List<RequirementCase> req2Cases = new RequirementTraverser(requirement2).getCases();
 
@@ -86,6 +87,8 @@ public class RequirementTraverser {
         combined.addAll(req1Cases);
         combined.addAll(req2Cases);
 
+        // Take every newly found case, and combine it with what we have already
+        // found in this instance.
         List<RequirementCase> cases = Lists.newArrayList();
         for (RequirementCase activeCase : this.activeCases) {
             for (RequirementCase otherCase : combined) {

@@ -114,12 +114,37 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
 
     @Override
     public void saveOrUpdate(Query<T> query) {
-        // TODO
+        // In this case we first have to find all the keys we wish to modify. This
+        // means we have to find all matching keys.
+        if (query.getRequirement() != null) {
+            FieldValue<T>[] newValues = query.getValues();
+            List<String> keys = this.getKeys(query.getRequirement());
+
+            for (String key : keys) {
+                FieldValue<T>[] currentValues = this.getValues(key);
+                for (FieldValue<T> newValue : newValues) {
+                    this.manager.updateArrayValue(newValue.getField(), newValue.getValue(), currentValues);
+                }
+
+                // Current values have been updated
+                this.insertIntoHash(key, currentValues);
+            }
+
+            // Query completed
+            return;
+        }
+
+        // We now have a new T instance to save
+        this.insertIntoHash(query.getInstance(), query.getValues());
     }
 
     @Override
     public void delete(Query<T> query) {
-        // TODO
+        List<String> keys = this.getKeys(query.getRequirement());
+
+        try (Jedis jedis = this.pool.getResource()) {
+            jedis.del(keys.toArray(new String[0]));
+        }
     }
 
     public int getNextAutoIncrementValue() {
