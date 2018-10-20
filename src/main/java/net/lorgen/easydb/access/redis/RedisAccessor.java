@@ -79,16 +79,23 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
 
         this.pool = new JedisPool(poolConfig, host, port, 2000, password);
 
-        if (manager.getProfile().getAutoIncrementField() != null) {
-            String key = String.format(AUTO_INCREMENT_FORMAT, this.table);
+        this.setUp();
+    }
 
-            try (Jedis jedis = this.pool.getResource()) {
-                if (jedis.exists(key)) {
-                    return;
-                }
+    @Override
+    public void setUp() {
+        if (this.manager.getProfile().getAutoIncrementField() == null) {
+            return;
+        }
 
-                jedis.set(key, "0");
+        String key = String.format(AUTO_INCREMENT_FORMAT, this.table);
+
+        try (Jedis jedis = this.pool.getResource()) {
+            if (jedis.exists(key)) {
+                return;
             }
+
+            jedis.set(key, "0");
         }
     }
 
@@ -136,8 +143,12 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
 
         // We now have a new T instance to save
         // First; Verify all unique fields:
-        for (PersistentField<T> field : this.manager.getProfile().getUniqueFields()) {
-            List<String> keys = this.getKeys(new FieldValue(field, this.manager.getArrayValue(field, query.getValues())));
+        for (WrappedIndex<T> index : this.manager.getProfile().getUniqueIndices()) {
+            FieldValue<T>[] values = Arrays.stream(index.getFields())
+              .map(field -> new FieldValue<>(field, this.manager.getArrayValue(field, query.getValues())))
+              .toArray(FieldValue[]::new);
+
+            List<String> keys = this.getKeys(values);
             if (keys.isEmpty()) {
                 continue;
             }
@@ -148,7 +159,7 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
                 continue;
             }
 
-            throw new IllegalStateException("Unique field \"" + field.getName() + "\" is same as another entry!");
+            throw new IllegalArgumentException("Unique index \"" + index + "\" is same as another entry!");
         }
 
         // Then; Save it
@@ -175,7 +186,17 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
     public void drop() {
         try (Jedis jedis = this.pool.getResource()) {
             Set<String> keys = jedis.keys(String.format(STORE_FORMAT, this.table, "*"));
-            jedis.del(keys.toArray(new String[0]));
+            if (!keys.isEmpty()) {
+                jedis.del(keys.toArray(new String[0]));
+            }
+
+            for (WrappedIndex<T> index : this.manager.getProfile().getIndices()) {
+                jedis.del(this.getIndexHashKey(index.getFields()));
+            }
+
+            if (this.manager.getProfile().getAutoIncrementField() != null) {
+                jedis.del(String.format(AUTO_INCREMENT_FORMAT, this.table));
+            }
         }
     }
 

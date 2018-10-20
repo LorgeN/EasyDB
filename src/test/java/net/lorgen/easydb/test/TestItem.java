@@ -5,7 +5,6 @@ import net.lorgen.easydb.Index;
 import net.lorgen.easydb.Persist;
 import net.lorgen.easydb.StorageKey;
 import net.lorgen.easydb.StoredItem;
-import net.lorgen.easydb.Unique;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -16,8 +15,7 @@ public class TestItem implements StoredItem {
     private int id;
 
     @Persist(name = "name", size = 24)
-    @Index
-    @Unique
+    @Index(unique = true)
     private String username;
 
     @Persist(typeParams = boolean.class) // Testing persistent field
@@ -40,6 +38,15 @@ public class TestItem implements StoredItem {
         this.username = username;
     }
 
+    public TestItem(int id, String username, String firstName, String lastName, String email, int age) {
+        this.id = id;
+        this.username = username;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.age = age;
+    }
+
     public TestItem(String username, String firstName, String lastName, String email, int age) {
         this.username = username;
         this.firstName = firstName;
@@ -50,6 +57,10 @@ public class TestItem implements StoredItem {
 
     public int getId() {
         return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public String getUsername() {
@@ -82,7 +93,6 @@ public class TestItem implements StoredItem {
 
         return new EqualsBuilder()
           .append(id, testItem.id)
-          .append(age, testItem.age)
           .append(username, testItem.username)
           .append(firstName, testItem.firstName)
           .append(lastName, testItem.lastName)

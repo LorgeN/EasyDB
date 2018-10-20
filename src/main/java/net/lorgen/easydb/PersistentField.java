@@ -21,7 +21,7 @@ public class PersistentField<T extends StoredItem> {
     private boolean key;
     private boolean autoIncr;
     private boolean index;
-    private boolean unique;
+    private boolean uniqueIndex;
     private int[] indexIds;
 
     public PersistentField(int fieldIndex, Class<T> tClass, Field field) {
@@ -47,13 +47,9 @@ public class PersistentField<T extends StoredItem> {
         this.typeParams = annotation.typeParams();
         this.index = field.isAnnotationPresent(Index.class);
         if (this.index) {
-            this.indexIds = field.getAnnotation(Index.class).value();
-        }
-
-        this.unique = field.isAnnotationPresent(Unique.class);
-        if (this.unique && !this.index) {
-            this.index = true;
-            this.indexIds = new int[]{-1};
+            Index indexAnnot = field.getAnnotation(Index.class);
+            this.uniqueIndex = indexAnnot.unique();
+            this.indexIds = indexAnnot.value();
         }
 
         StorageKey keyAnnot = field.getAnnotation(StorageKey.class);
@@ -149,16 +145,12 @@ public class PersistentField<T extends StoredItem> {
         return autoIncr;
     }
 
-    public boolean isUnique() {
-        return unique;
-    }
-
-    public void setUnique(boolean unique) {
-        this.unique = unique;
-    }
-
     public boolean isIndex() {
         return index;
+    }
+
+    public boolean isUniqueIndex() {
+        return uniqueIndex;
     }
 
     public int[] getIndexIds() {
@@ -217,7 +209,6 @@ public class PersistentField<T extends StoredItem> {
           ", key=" + key +
           ", autoIncr=" + autoIncr +
           ", index=" + index +
-          ", unique=" + unique +
           ", indexIds=" + Arrays.toString(indexIds) +
           '}';
     }

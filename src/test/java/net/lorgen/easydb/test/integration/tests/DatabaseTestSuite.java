@@ -5,7 +5,6 @@ import net.lorgen.easydb.StorageManager;
 import net.lorgen.easydb.test.TestItem;
 import net.lorgen.easydb.test.integration.redis.RedisTestManager;
 import net.lorgen.easydb.test.integration.sql.SQLTestManager;
-import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
@@ -14,10 +13,9 @@ import java.util.List;
 
 @RunWith(Suite.class)
 @SuiteClasses({
-  DatabaseSaveIT.class,
-  DatabaseSelect1IT.class,
-  DatabaseDeleteIT.class,
-  DatabaseSelect2IT.class
+  DatabaseSetupIT.class,
+  DatabaseIT.class,
+  DatabaseUniqueIT.class
 })
 public class DatabaseTestSuite {
 

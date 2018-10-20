@@ -8,16 +8,22 @@ import java.util.Arrays;
 public class WrappedIndex<T extends StoredItem> {
 
     private int id;
+    private boolean unique;
     private PersistentField<T>[] fields;
 
     @SafeVarargs
-    public WrappedIndex(int id, PersistentField<T>... fields) {
+    public WrappedIndex(int id, boolean unique, PersistentField<T>... fields) {
         this.id = id;
+        this.unique = unique;
         this.fields = fields;
     }
 
     public int getId() {
         return id;
+    }
+
+    public boolean isUnique() {
+        return unique;
     }
 
     public PersistentField<T>[] getFields() {

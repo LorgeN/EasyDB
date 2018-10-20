@@ -64,7 +64,7 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
         this.manager = manager;
         this.table = table;
 
-        this.runCreateTableCommand();
+        this.createTable();
     }
 
     /**
@@ -85,7 +85,7 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
      * uses in the database, unless it already exists. Automatically ran whenever
      * an instance is created (Called in constructor).
      */
-    public void runCreateTableCommand() {
+    public void createTable() {
         StringBuilder builder = new StringBuilder("CREATE TABLE IF NOT EXISTS " + this.table + "(");
 
         PersistentField<T>[] fields = this.manager.getProfile().getFields();
@@ -139,7 +139,8 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
                 "    given_database VARCHAR(64)," +
                 "    given_table    VARCHAR(64)," +
                 "    given_index    VARCHAR(64)," +
-                "    given_columns  VARCHAR(64)" +
+                "    given_columns  VARCHAR(64)," +
+                "    unique_index   TINYINT(1)" +
                 ") BEGIN " +
                 "    DECLARE IndexExists INTEGER;" +
 
@@ -150,11 +151,19 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
                 "    AND   index_name   = given_index;" +
 
                 "    IF IndexExists = 0 THEN" +
-                "        SET @sqlstmt = CONCAT('CREATE INDEX ',given_index,' ON '," +
-                "        given_database,'.',given_table,' (',given_columns,')');" +
-                "        PREPARE st FROM @sqlstmt;" +
-                "        EXECUTE st;" +
-                "        DEALLOCATE PREPARE st;" +
+                "        IF unique_index = 1 THEN" +
+                "            SET @sqlstmt = CONCAT('CREATE UNIQUE INDEX ',given_index,' ON '," +
+                "            given_database,'.',given_table,' (',given_columns,')');" +
+                "            PREPARE st FROM @sqlstmt;" +
+                "            EXECUTE st;" +
+                "            DEALLOCATE PREPARE st;" +
+                "        ELSE" +
+                "            SET @sqlstmt = CONCAT('CREATE INDEX ',given_index,' ON '," +
+                "            given_database,'.',given_table,' (',given_columns,')');" +
+                "            PREPARE st FROM @sqlstmt;" +
+                "            EXECUTE st;" +
+                "            DEALLOCATE PREPARE st;" +
+                "        END IF;" +
                 "    ELSE" +
                 "        SELECT CONCAT('Index ',given_index,' already exists on Table '," +
                 "        given_database,'.',given_table) CreateindexErrorMessage;   " +
@@ -171,7 +180,8 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
                 }
 
                 PersistentField<T> field = index.getFields()[0];
-                statement.addBatch("CALL CREATE_INDEX(" + database + ", \"" + this.table + "\", \"" + field.getName() + "\", \"" + field.getName() + "\")");
+                statement.addBatch("CALL CREATE_INDEX(" + database + ", \"" + this.table + "\", \"" + field.getName() +
+                  "\", \"" + field.getName() + "\", " + (index.isUnique() ? 1 : 0) + ")");
             }
 
             for (Entry<Integer, WrappedIndex<T>> entry : indexMap.entrySet()) {
@@ -188,13 +198,19 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
                     builder.append(", ");
                 }
 
-                statement.addBatch("CALL CREATE_INDEX(" + database + ", \"" + this.table + "\", " + name + ", \"" + builder.toString() + "\")");
+                statement.addBatch("CALL CREATE_INDEX(" + database + ", \"" + this.table + "\", " + name + ", \"" +
+                  builder.toString() + "\", " + (entry.getValue().isUnique() ? 1 : 0) + ")");
             }
 
             statement.executeBatch();
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public void setUp() {
+        this.createTable();
     }
 
     /**
@@ -333,7 +349,7 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
         PersistentField<T>[] fields = autoIncrementField == null
           ? this.manager.getProfile().getFields()
           : Arrays.stream(this.manager.getProfile().getFields())
-          .filter(field -> !field.isAutoIncrement())
+          .filter(field -> !field.isAutoIncrement() || ((int) this.manager.getArrayValue(field, query.getValues())) != 0)
           .toArray(PersistentField[]::new);
 
         for (int i = 0; i < fields.length; i++) {
@@ -368,6 +384,8 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
         builder.append(";");
 
         try (Connection connection = this.getConnection()) {
+            System.out.println(builder.toString());
+
             int autoIncrement = this.getCurrentAutoIncrement();
 
             Statement statement = connection.createStatement();
@@ -484,7 +502,7 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
     }
 
     private String toColumnDeclaration(PersistentField<T> field) {
-        return "`" + field.getName() + "` " + this.getColumnType(field) + (field.isAutoIncrement() ? " UNIQUE AUTO_INCREMENT" : (field.isUnique() ? " UNIQUE" : ""));
+        return "`" + field.getName() + "` " + this.getColumnType(field) + (field.isAutoIncrement() ? " UNIQUE AUTO_INCREMENT" : "");
     }
 
     private String getColumnType(PersistentField<T> field) {

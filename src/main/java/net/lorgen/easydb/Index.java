@@ -29,4 +29,11 @@ public @interface Index {
      * @return The ID of this index.
      */
     int[] value() default {-1};
+
+    /**
+     * @return If any combination of the values in this index is unique (i. e.
+     * may only occur once in the entire dataset). Must be set to true for all fields
+     * in the index to apply.
+     */
+    boolean unique() default false;
 }

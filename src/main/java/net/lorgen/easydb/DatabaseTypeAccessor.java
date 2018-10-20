@@ -13,6 +13,12 @@ import java.util.List;
 public interface DatabaseTypeAccessor<T extends StoredItem> {
 
     /**
+     * Executes the database setup. Automatically called, but can (using this
+     * method) also be called manually.
+     */
+    void setUp();
+
+    /**
      * Looks for the first T value to match the given parameters.
      *
      * @param query The {@link Query query}

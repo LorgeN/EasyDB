@@ -18,7 +18,7 @@ public class StoredItemProfile<T extends StoredItem> {
     private PersistentField<T>[] fields;
     private PersistentField<T> autoIncrementField;
     private WrappedIndex<T>[] indices;
-    private PersistentField<T>[] uniqueFields;
+    private WrappedIndex<T>[] uniqueIndices;
 
     public StoredItemProfile(Class<T> typeClass) {
         this.typeClass = typeClass;
@@ -46,10 +46,6 @@ public class StoredItemProfile<T extends StoredItem> {
         }
 
         this.fields = fields.stream()
-          .toArray(PersistentField[]::new);
-
-        this.uniqueFields = Arrays.stream(this.getFields())
-          .filter(PersistentField::isUnique)
           .toArray(PersistentField[]::new);
 
         this.autoIncrementField = Arrays.stream(this.getFields())
@@ -80,12 +76,21 @@ public class StoredItemProfile<T extends StoredItem> {
 
         List<WrappedIndex<T>> indicesList = Lists.newArrayList();
         AtomicInteger id = new AtomicInteger(1);
-        indexMap.forEach((integer, persistentFields) -> indicesList.add(new WrappedIndex<T>(id.getAndIncrement(), persistentFields.toArray(new PersistentField[0]))));
+
+        indexMap.forEach((integer, persistentFields) -> indicesList.add(new WrappedIndex<T>(
+          id.getAndIncrement(),
+          persistentFields.stream().allMatch(PersistentField::isUniqueIndex),
+          persistentFields.toArray(new PersistentField[0])
+        )));
+
         for (PersistentField<T> soloIndex : soloIndices) {
-            indicesList.add(new WrappedIndex<>(id.getAndIncrement(), soloIndex));
+            indicesList.add(new WrappedIndex<>(id.getAndIncrement(), soloIndex.isUniqueIndex(), soloIndex));
         }
 
         this.indices = indicesList.toArray(new WrappedIndex[0]);
+        this.uniqueIndices = Arrays.stream(this.getIndices())
+          .filter(WrappedIndex::isUnique)
+          .toArray(WrappedIndex[]::new);
     }
 
     public PersistentField<T> resolveField(String name) {
@@ -140,8 +145,8 @@ public class StoredItemProfile<T extends StoredItem> {
         return indices;
     }
 
-    public PersistentField<T>[] getUniqueFields() {
-        return uniqueFields;
+    public WrappedIndex<T>[] getUniqueIndices() {
+        return uniqueIndices;
     }
 
     @Override
