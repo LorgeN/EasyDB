@@ -18,7 +18,7 @@ import java.lang.annotation.Target;
 public @interface Index {
 
     /**
-     * The ID of this index. If you are looking to execute queries on severalm fields
+     * The ID of this index. If you are looking to execute queries on several fields
      * together often, and theses fields are not {@link StorageKey keys}, you can
      * annotate these fields with this annotation and give them the same value. This
      * will create a speed-up on those fields when executing said kinds of queries.
