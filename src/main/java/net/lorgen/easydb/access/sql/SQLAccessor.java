@@ -52,7 +52,7 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
 
         HikariConfig hikariConfig = new HikariConfig();
         hikariConfig.setJdbcUrl("jdbc:mysql://" + host + ":" + port + "/" + database + "?&serverTimezone=UTC");
-        hikariConfig.setDriverClassName("com.mysql.jdbc.Driver");
+        hikariConfig.setDriverClassName("com.mysql.cj.jdbc.Driver");
         hikariConfig.setUsername(user);
         hikariConfig.setPassword(password);
         hikariConfig.setMinimumIdle(1);
@@ -142,13 +142,13 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
                 "    given_columns  VARCHAR(64)" +
                 ") BEGIN " +
                 "    DECLARE IndexExists INTEGER;" +
-                "" +
+
                 "    SELECT COUNT(1) INTO IndexExists" +
                 "    FROM INFORMATION_SCHEMA.STATISTICS" +
                 "    WHERE table_schema = given_database" +
                 "    AND   table_name   = given_table" +
                 "    AND   index_name   = given_index;" +
-                "" +
+
                 "    IF IndexExists = 0 THEN" +
                 "        SET @sqlstmt = CONCAT('CREATE INDEX ',given_index,' ON '," +
                 "        given_database,'.',given_table,' (',given_columns,')');" +
@@ -166,7 +166,7 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
 
             for (WrappedIndex<T> index : indices) {
                 if (index.getFields().length != 1) {
-                    indexMap.put(index.getFields()[0].getIndexId(), index);
+                    indexMap.put(index.getId(), index);
                     continue;
                 }
 
@@ -175,7 +175,7 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
             }
 
             for (Entry<Integer, WrappedIndex<T>> entry : indexMap.entrySet()) {
-                String name = "index_" + entry.getKey();
+                String name = "\"index_" + entry.getKey() + "\"";
                 StringBuilder builder = new StringBuilder();
                 PersistentField<T>[] fields = entry.getValue().getFields();
                 for (int i = 0; i < fields.length; i++) {
@@ -192,12 +192,6 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
             }
 
             statement.executeBatch();
-
-            if (this.manager.getProfile().getAutoIncrementField() == null) {
-                return;
-            }
-
-            statement.execute("ALTER TABLE " + this.getTableName() + " AUTO_INCREMENT=1");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -374,6 +368,8 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
         builder.append(";");
 
         try (Connection connection = this.getConnection()) {
+            int autoIncrement = this.getCurrentAutoIncrement();
+
             Statement statement = connection.createStatement();
             statement.execute(builder.toString());
 
@@ -386,8 +382,7 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
             }
 
             // Update the auto increment field
-            int row = this.getCurrentAutoIncrement();
-            autoIncrementField.set(query.getInstance(), row);
+            autoIncrementField.set(query.getInstance(), autoIncrement);
         } catch (SQLException e) {
             throw new SaveQueryException("Statement: " + builder.toString(), e, query);
         }
@@ -418,6 +413,15 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
             connection.createStatement().execute(builder.toString());
         } catch (SQLException e) {
             throw new DeleteQueryException("Statement: " + builder.toString(), e, query);
+        }
+    }
+
+    @Override
+    public void drop() {
+        try (Connection connection = this.getConnection()) {
+            connection.createStatement().execute("DROP TABLE " + this.getTableName());
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 
@@ -480,7 +484,7 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
     }
 
     private String toColumnDeclaration(PersistentField<T> field) {
-        return "`" + field.getName() + "` " + this.getColumnType(field) + (field.isAutoIncrement() ? " UNIQUE AUTO_INCREMENT" : (field.isUnique() ? " UNIQUE" : "")));
+        return "`" + field.getName() + "` " + this.getColumnType(field) + (field.isAutoIncrement() ? " UNIQUE AUTO_INCREMENT" : (field.isUnique() ? " UNIQUE" : ""));
     }
 
     private String getColumnType(PersistentField<T> field) {

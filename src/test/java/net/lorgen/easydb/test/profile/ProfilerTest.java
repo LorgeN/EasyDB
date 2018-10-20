@@ -17,8 +17,8 @@ public class ProfilerTest {
     private static final PersistentField<TestItem> LASTNAME_FIELD = new PersistentField<>(3, TestItem.class, UtilField.getField(TestItem.class, "lastName"));
     private static final PersistentField<TestItem> EMAIL_FIELD = new PersistentField<>(4, TestItem.class, UtilField.getField(TestItem.class, "email"));
 
-    private static final WrappedIndex<TestItem> USERNAME_INDEX = new WrappedIndex<>(USERNAME_FIELD);
-    private static final WrappedIndex<TestItem> NAME_INDEX = new WrappedIndex<>(FIRSTNAME_FIELD, LASTNAME_FIELD);
+    private static final WrappedIndex<TestItem> NAME_INDEX = new WrappedIndex<>(1, FIRSTNAME_FIELD, LASTNAME_FIELD);
+    private static final WrappedIndex<TestItem> USERNAME_INDEX = new WrappedIndex<>(2, USERNAME_FIELD);
 
     @Test
     public void profilerTest() {
@@ -41,8 +41,8 @@ public class ProfilerTest {
         assertThat(profile.getAutoIncrementField()).isEqualTo(ID_FIELD);
 
         assertThat(profile.getIndices()).isEqualTo(new WrappedIndex<?>[]{
-          USERNAME_INDEX,
-          NAME_INDEX
+          NAME_INDEX,
+          USERNAME_INDEX
         });
     }
 }

@@ -1,6 +1,7 @@
 package net.lorgen.easydb;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -21,7 +22,7 @@ public class PersistentField<T extends StoredItem> {
     private boolean autoIncr;
     private boolean index;
     private boolean unique;
-    private int indexId;
+    private int[] indexIds;
 
     public PersistentField(int fieldIndex, Class<T> tClass, Field field) {
         this.fieldIndex = fieldIndex;
@@ -46,10 +47,14 @@ public class PersistentField<T extends StoredItem> {
         this.typeParams = annotation.typeParams();
         this.index = field.isAnnotationPresent(Index.class);
         if (this.index) {
-            this.indexId = field.getAnnotation(Index.class).value();
+            this.indexIds = field.getAnnotation(Index.class).value();
         }
 
         this.unique = field.isAnnotationPresent(Unique.class);
+        if (this.unique && !this.index) {
+            this.index = true;
+            this.indexIds = new int[]{-1};
+        }
 
         StorageKey keyAnnot = field.getAnnotation(StorageKey.class);
         if (keyAnnot == null) {
@@ -61,6 +66,8 @@ public class PersistentField<T extends StoredItem> {
     }
 
     public Object get(T object) {
+        Validate.notNull(object);
+
         try {
             boolean accessible = this.field.isAccessible();
             this.field.setAccessible(true);
@@ -78,6 +85,8 @@ public class PersistentField<T extends StoredItem> {
     }
 
     public FieldValue<T> getValue(T object) {
+        Validate.notNull(object);
+
         Object value = this.get(object);
         if (value == null && !this.canBeNull()) {
             throw new NullPointerException("Field tagged as not-null \"" + this.field.getName() + "\" is null in given object!");
@@ -152,8 +161,8 @@ public class PersistentField<T extends StoredItem> {
         return index;
     }
 
-    public int getIndexId() {
-        return indexId;
+    public int[] getIndexIds() {
+        return indexIds;
     }
 
     public boolean hasCustomSerializer() {
@@ -197,8 +206,9 @@ public class PersistentField<T extends StoredItem> {
     @Override
     public String toString() {
         return "PersistentField{" +
-          "tClass=" + tClass +
-          ", field=" + field +
+          "fieldIndex=" + fieldIndex +
+          ", tClass=" + tClass +
+          ", field=" + field.getName() +
           ", name='" + name + '\'' +
           ", type=" + type +
           ", size=" + size +
@@ -207,7 +217,8 @@ public class PersistentField<T extends StoredItem> {
           ", key=" + key +
           ", autoIncr=" + autoIncr +
           ", index=" + index +
-          ", indexId=" + indexId +
+          ", unique=" + unique +
+          ", indexIds=" + Arrays.toString(indexIds) +
           '}';
     }
 }

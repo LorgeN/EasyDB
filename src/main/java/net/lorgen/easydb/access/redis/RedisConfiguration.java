@@ -2,6 +2,7 @@ package net.lorgen.easydb.access.redis;
 
 import net.lorgen.easydb.DatabaseType;
 import net.lorgen.easydb.configuration.ConnectionConfiguration;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
 public class RedisConfiguration extends ConnectionConfiguration {
@@ -14,11 +15,13 @@ public class RedisConfiguration extends ConnectionConfiguration {
         super(DatabaseType.REDIS);
 
         Validate.notBlank(host);
-        Validate.notBlank(password);
 
         this.setValue(HOST_KEY, host);
-        this.setValue(PASSWORD_KEY, password);
         this.setValue(PORT_KEY, port);
+
+        if (!StringUtils.isBlank(password)) {
+            this.setValue(PASSWORD_KEY, password);
+        }
     }
 
     public String getHost() {

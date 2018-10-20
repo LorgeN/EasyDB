@@ -9,6 +9,7 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class StoredItemProfile<T extends StoredItem> {
 
@@ -17,6 +18,7 @@ public class StoredItemProfile<T extends StoredItem> {
     private PersistentField<T>[] fields;
     private PersistentField<T> autoIncrementField;
     private WrappedIndex<T>[] indices;
+    private PersistentField<T>[] uniqueFields;
 
     public StoredItemProfile(Class<T> typeClass) {
         this.typeClass = typeClass;
@@ -46,6 +48,10 @@ public class StoredItemProfile<T extends StoredItem> {
         this.fields = fields.stream()
           .toArray(PersistentField[]::new);
 
+        this.uniqueFields = Arrays.stream(this.getFields())
+          .filter(PersistentField::isUnique)
+          .toArray(PersistentField[]::new);
+
         this.autoIncrementField = Arrays.stream(this.getFields())
           .filter(PersistentField::isAutoIncrement)
           .findFirst().orElse(null);
@@ -58,25 +64,33 @@ public class StoredItemProfile<T extends StoredItem> {
             return;
         }
 
-        List<WrappedIndex<T>> indicesList = Lists.newArrayList();
+        List<PersistentField<T>> soloIndices = Lists.newArrayList();
         Map<Integer, List<PersistentField<T>>> indexMap = Maps.newHashMap();
 
         for (PersistentField<T> currentIndex : indices) {
-            if (currentIndex.getIndexId() != -1) {
-                indexMap.computeIfAbsent(currentIndex.getIndexId(), id -> Lists.newArrayList()).add(currentIndex);
-                continue;
-            }
+            for (int id : currentIndex.getIndexIds()) {
+                if (id != -1) {
+                    indexMap.computeIfAbsent(id, someId -> Lists.newArrayList()).add(currentIndex);
+                    continue;
+                }
 
-            indicesList.add(new WrappedIndex<>(currentIndex));
+                soloIndices.add(currentIndex);
+            }
         }
 
-        indexMap.forEach((integer, persistentFields) -> indicesList.add(new WrappedIndex<T>(persistentFields.toArray(new PersistentField[0]))));
+        List<WrappedIndex<T>> indicesList = Lists.newArrayList();
+        AtomicInteger id = new AtomicInteger(1);
+        indexMap.forEach((integer, persistentFields) -> indicesList.add(new WrappedIndex<T>(id.getAndIncrement(), persistentFields.toArray(new PersistentField[0]))));
+        for (PersistentField<T> soloIndex : soloIndices) {
+            indicesList.add(new WrappedIndex<>(id.getAndIncrement(), soloIndex));
+        }
+
         this.indices = indicesList.toArray(new WrappedIndex[0]);
     }
 
     public PersistentField<T> resolveField(String name) {
         return Arrays.stream(this.fields)
-          .filter(field -> field.getName().equals(name)) // Case-sensitive
+          .filter(field -> field.getName().equals(name) || field.getField().getName().equals(name)) // Case-sensitive
           .findFirst().orElse(null);
     }
 
@@ -124,6 +138,10 @@ public class StoredItemProfile<T extends StoredItem> {
 
     public WrappedIndex<T>[] getIndices() {
         return indices;
+    }
+
+    public PersistentField<T>[] getUniqueFields() {
+        return uniqueFields;
     }
 
     @Override

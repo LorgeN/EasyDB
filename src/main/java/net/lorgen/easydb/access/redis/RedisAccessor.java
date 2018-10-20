@@ -21,8 +21,6 @@ import net.lorgen.easydb.query.traverse.RequirementTraverser;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
-import redis.clients.jedis.ScanParams;
-import redis.clients.jedis.ScanResult;
 
 import java.util.Arrays;
 import java.util.List;
@@ -42,7 +40,7 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
      */
     private static final String AUTO_INCREMENT_FORMAT = "auto_increment:%s";
 
-    private static final String INDEX_HASH_FORMAT = "%s(index:%s)";
+    private static final String INDEX_HASH_FORMAT = "index:%s(fields[%s])";
 
     private static final String STORE_FORMAT = "%s(%s)";
 
@@ -134,15 +132,49 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
             return;
         }
 
+        String thisKey = this.getKey(query.getValues());
+
         // We now have a new T instance to save
+        // First; Verify all unique fields:
+        for (PersistentField<T> field : this.manager.getProfile().getUniqueFields()) {
+            List<String> keys = this.getKeys(new FieldValue(field, this.manager.getArrayValue(field, query.getValues())));
+            if (keys.isEmpty()) {
+                continue;
+            }
+
+            // This would mean we are working with the same object,
+            // and we of course need to be able to update it
+            if (keys.size() == 1 && keys.get(0).equals(thisKey)) {
+                continue;
+            }
+
+            throw new IllegalStateException("Unique field \"" + field.getName() + "\" is same as another entry!");
+        }
+
+        // Then; Save it
         this.insertIntoHash(query.getInstance(), query.getValues());
     }
 
     @Override
     public void delete(Query<T> query) {
-        List<String> keys = this.getKeys(query.getRequirement());
+        if (query.getRequirement() == null) {
+            this.drop();
+            return;
+        }
+
+        String[] keys = this.getKeys(query.getRequirement()).toArray(new String[0]);
 
         try (Jedis jedis = this.pool.getResource()) {
+            jedis.del(keys);
+        }
+
+        this.removeFromIndices(keys);
+    }
+
+    @Override
+    public void drop() {
+        try (Jedis jedis = this.pool.getResource()) {
+            Set<String> keys = jedis.keys(String.format(STORE_FORMAT, this.table, "*"));
             jedis.del(keys.toArray(new String[0]));
         }
     }
@@ -201,14 +233,24 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
     }
 
     private T getObject(String key) {
-        return this.manager.fromValues(this.getValues(key));
+        FieldValue<T>[] values = this.getValues(key);
+        if (values == null) {
+            return null;
+        }
+
+        return this.manager.fromValues(values);
     }
 
     private FieldValue<T>[] getValues(String key) {
         List<FieldValue<T>> list = Lists.newArrayList();
 
         try (Jedis jedis = this.pool.getResource()) {
-            for (Entry<String, String> entry : jedis.hgetAll(key).entrySet()) {
+            Map<String, String> valueMap = jedis.hgetAll(key);
+            if (valueMap.isEmpty()) {
+                return null;
+            }
+
+            for (Entry<String, String> entry : valueMap.entrySet()) {
                 PersistentField<T> field = this.manager.getProfile().resolveField(entry.getKey());
                 if (field == null) {
                     throw new IllegalArgumentException("Unknown field \"" + entry.getKey() + "\"!");
@@ -292,13 +334,15 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
                 values.add(new FieldValue<>((PersistentField<T>) simpleRequirement.getField(), simpleRequirement.getValue()));
             }
 
-            keys.addAll(this.getKeys(values.toArray(new FieldValue[0])));
+            List<String> keysFound = this.getKeys(values.toArray(new FieldValue[0]));
+            keys.addAll(keysFound);
         }
 
         return Lists.newArrayList(keys);
     }
 
-    private List<String> getKeys(FieldValue<T>[] values) {
+    @SafeVarargs
+    private final List<String> getKeys(FieldValue<T>... values) {
         StoredItemProfile<T> profile = this.manager.getProfile();
         PersistentField<T>[] fields = Arrays.stream(values)
           .map(FieldValue::getField)
@@ -372,33 +416,29 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
             builder.append(field.getType().toString(this.manager, field, value));
         }
 
-        ScanParams params = new ScanParams()
-          .count(100)
-          .match(builder.toString());
-
         List<String> keys = Lists.newArrayList();
-        try (Jedis jedis = this.pool.getResource()) {
-            String cursor = ScanParams.SCAN_POINTER_START;
 
-            // do-while instead of while because we want it to execute at least once
-            do {
-                ScanResult<Entry<String, String>> result = jedis.hscan(key, cursor, params);
-                for (Entry<String, String> entry : result.getResult()) {
-                    keys.add(entry.getKey());
+        String matcher = builder.toString();
+        try (Jedis jedis = this.pool.getResource()) {
+            Map<String, String> indexMap = jedis.hgetAll(key);
+
+            for (Entry<String, String> entry : indexMap.entrySet()) {
+                if (!entry.getValue().equals(matcher)) {
+                    continue;
                 }
 
-                cursor = result.getStringCursor();
-            } while (!cursor.equals(ScanParams.SCAN_POINTER_START)); // This means we are done
+                keys.add(entry.getKey());
+            }
         }
 
         return keys;
     }
 
-    private void removeFromIndices(String key) {
+    private void removeFromIndices(String... keys) {
         try (Jedis jedis = this.pool.getResource()) {
             for (WrappedIndex<T> index : this.manager.getProfile().getIndices()) {
                 String indexKey = this.getIndexHashKey(index.getFields());
-                jedis.hdel(indexKey, key);
+                jedis.hdel(indexKey, keys);
             }
         }
     }

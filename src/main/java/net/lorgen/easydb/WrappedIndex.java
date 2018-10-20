@@ -7,11 +7,17 @@ import java.util.Arrays;
 
 public class WrappedIndex<T extends StoredItem> {
 
+    private int id;
     private PersistentField<T>[] fields;
 
     @SafeVarargs
-    public WrappedIndex(PersistentField<T>... fields) {
+    public WrappedIndex(int id, PersistentField<T>... fields) {
+        this.id = id;
         this.fields = fields;
+    }
+
+    public int getId() {
+        return id;
     }
 
     public PersistentField<T>[] getFields() {
@@ -61,6 +67,7 @@ public class WrappedIndex<T extends StoredItem> {
         WrappedIndex<?> that = (WrappedIndex<?>) o;
 
         return new EqualsBuilder()
+          .append(id, that.id)
           .append(fields, that.fields)
           .isEquals();
     }
@@ -68,6 +75,7 @@ public class WrappedIndex<T extends StoredItem> {
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 37)
+          .append(id)
           .append(fields)
           .toHashCode();
     }
@@ -75,7 +83,8 @@ public class WrappedIndex<T extends StoredItem> {
     @Override
     public String toString() {
         return "WrappedIndex{" +
-          "fields=" + Arrays.toString(fields) +
+          "id=" + id +
+          ", fields=" + Arrays.toString(fields) +
           '}';
     }
 }

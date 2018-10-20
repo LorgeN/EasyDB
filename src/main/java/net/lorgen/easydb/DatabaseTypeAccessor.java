@@ -44,4 +44,9 @@ public interface DatabaseTypeAccessor<T extends StoredItem> {
      * @param query The {@link Query query}
      */
     void delete(Query<T> query);
+
+    /**
+     * Drops all of the stored data in this table
+     */
+    void drop();
 }

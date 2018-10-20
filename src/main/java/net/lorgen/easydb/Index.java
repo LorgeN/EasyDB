@@ -28,5 +28,5 @@ public @interface Index {
      *
      * @return The ID of this index.
      */
-    int value() default -1;
+    int[] value() default {-1};
 }

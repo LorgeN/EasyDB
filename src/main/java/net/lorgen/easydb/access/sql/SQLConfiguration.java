@@ -2,6 +2,7 @@ package net.lorgen.easydb.access.sql;
 
 import net.lorgen.easydb.DatabaseType;
 import net.lorgen.easydb.configuration.ConnectionConfiguration;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
 public class SQLConfiguration extends ConnectionConfiguration {
@@ -18,13 +19,15 @@ public class SQLConfiguration extends ConnectionConfiguration {
         Validate.notBlank(host);
         Validate.notBlank(database);
         Validate.notBlank(user);
-        Validate.notBlank(password);
 
         this.setValue(HOST_KEY, host);
         this.setValue(DATABASE_KEY, database);
         this.setValue(USER_KEY, user);
-        this.setValue(PASSWORD_KEY, password);
         this.setValue(PORT_KEY, port);
+
+        if (!StringUtils.isBlank(password)) {
+            this.setValue(PASSWORD_KEY, password);
+        }
     }
 
     public String getHost() {

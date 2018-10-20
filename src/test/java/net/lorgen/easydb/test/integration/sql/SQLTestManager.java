@@ -1,4 +1,4 @@
-package net.lorgen.easydb.test.sql;
+package net.lorgen.easydb.test.integration.sql;
 
 import net.lorgen.easydb.DatabaseType;
 import net.lorgen.easydb.StorageManager;
@@ -8,11 +8,12 @@ import net.lorgen.easydb.test.TestItem;
 
 public class SQLTestManager extends StorageManager<TestItem> {
 
+
     private static final ConnectionConfiguration TEST_CONFIG;
     private static final SQLTestManager instance;
 
     static {
-        TEST_CONFIG = new SQLConfiguration("localhost", "database", "username", "password", 3306);
+        TEST_CONFIG = new SQLConfiguration("localhost", "test", "root", "", 3306);
         instance = new SQLTestManager();
     }
 

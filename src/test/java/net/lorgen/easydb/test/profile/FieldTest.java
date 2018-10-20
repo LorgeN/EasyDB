@@ -48,7 +48,7 @@ public class FieldTest {
     public boolean index;
 
     @Parameter(9)
-    public int indexId;
+    public int[] indexIds;
 
     @Test
     public void fieldTest() {
@@ -62,17 +62,17 @@ public class FieldTest {
         assertThat(field.isStorageKey()).isEqualTo(this.key);
         assertThat(field.isAutoIncrement()).isEqualTo(this.autoIncr);
         assertThat(field.isIndex()).isEqualTo(this.index);
-        assertThat(field.getIndexId()).isEqualTo(this.indexId);
+        assertThat(field.getIndexIds()).isEqualTo(this.indexIds);
     }
 
     @Parameters
     public static Collection<Object[]> data() {
         return Lists.newArrayList(
           // Various data for the fields in the "TestItem" class
-          new Object[]{"id", "id", DataType.INTEGER, 16, new Class[0], DataType.class, true, true, false, 0},
-          new Object[]{"username", "name", DataType.STRING, 24, new Class[0], DataType.class, false, false, true, -1},
-          new Object[]{"firstName", "firstName", DataType.STRING, 16, new Class[]{boolean.class}, DataType.class, false, false, true, 1},
-          new Object[]{"email", "email", DataType.STRING, 16, new Class[0], DataType.class, false, false, false, 0}
+          new Object[]{"id", "id", DataType.INTEGER, 16, new Class[0], DataType.class, true, true, false, null},
+          new Object[]{"username", "name", DataType.STRING, 24, new Class[0], DataType.class, false, false, true, new int[]{-1}},
+          new Object[]{"firstName", "firstName", DataType.STRING, 16, new Class[]{boolean.class}, DataType.class, false, false, true, new int[]{1}},
+          new Object[]{"email", "email", DataType.STRING, 32, new Class[0], DataType.class, false, false, false, null}
         );
     }
 }
