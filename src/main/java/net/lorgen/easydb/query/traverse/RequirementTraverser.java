@@ -60,7 +60,7 @@ public class RequirementTraverser {
                 this.traverse(((CombinedRequirement) requirement).getRequirement2());
                 break;
             default:
-                throw new UnsupportedOperationException("Operation \"" + requirement.getOperator().name() + "\" not supported by Redis!");
+                throw new UnsupportedOperationException("Operation \"" + requirement.getOperator().name() + "\" not supported!");
         }
     }
 
