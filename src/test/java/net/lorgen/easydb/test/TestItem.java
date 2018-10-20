@@ -18,7 +18,7 @@ public class TestItem implements StoredItem {
     @Index(unique = true)
     private String username;
 
-    @Persist(typeParams = boolean.class) // Testing persistent field
+    @Persist(typeParams = boolean.class) // Testing persistent field type params
     @Index(1)
     private String firstName;
 
