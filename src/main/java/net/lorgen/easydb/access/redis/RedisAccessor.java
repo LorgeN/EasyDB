@@ -8,10 +8,11 @@ import com.google.common.collect.Sets;
 import net.lorgen.easydb.DatabaseTypeAccessor;
 import net.lorgen.easydb.FieldValue;
 import net.lorgen.easydb.PersistentField;
-import net.lorgen.easydb.StorageManager;
+import net.lorgen.easydb.ItemRepository;
 import net.lorgen.easydb.StoredItem;
 import net.lorgen.easydb.StoredItemProfile;
 import net.lorgen.easydb.WrappedIndex;
+import net.lorgen.easydb.connection.ConnectionRegistry;
 import net.lorgen.easydb.query.Operator;
 import net.lorgen.easydb.query.Query;
 import net.lorgen.easydb.query.req.QueryRequirement;
@@ -19,13 +20,12 @@ import net.lorgen.easydb.query.req.SimpleRequirement;
 import net.lorgen.easydb.query.traverse.RequirementCase;
 import net.lorgen.easydb.query.traverse.RequirementTraverser;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -60,26 +60,20 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
      * use "INCR" to increment, and use the returned value as ID val
      */
 
-    private final JedisPool pool;
-    private final StorageManager<T> manager;
+    private final ItemRepository<T> manager;
     private final String table;
+    private final RedisConfiguration configuration;
 
-    public RedisAccessor(RedisConfiguration config, StorageManager<T> manager, String table) {
+    public RedisAccessor(RedisConfiguration config, ItemRepository<T> manager, String table) {
         this.manager = manager;
         this.table = table;
-
-        JedisPoolConfig poolConfig = new JedisPoolConfig();
-        poolConfig.setMaxWaitMillis(1000);
-        poolConfig.setMinIdle(5);
-        poolConfig.setMaxTotal(20);
-
-        String host = config.getHost();
-        int port = config.getPort();
-        String password = (config.getPassword() == null || config.getPassword().isEmpty()) ? null : config.getPassword();
-
-        this.pool = new JedisPool(poolConfig, host, port, 2000, password);
+        this.configuration = config;
 
         this.setUp();
+    }
+
+    private Jedis getResource() {
+        return ConnectionRegistry.getInstance().<Jedis>getPool(this.configuration).getConnection();
     }
 
     @Override
@@ -90,7 +84,7 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
 
         String key = String.format(AUTO_INCREMENT_FORMAT, this.table);
 
-        try (Jedis jedis = this.pool.getResource()) {
+        try (Jedis jedis = this.getResource()) {
             if (jedis.exists(key)) {
                 return;
             }
@@ -163,7 +157,7 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
         }
 
         // Then; Save it
-        this.insertIntoHash(query.getInstance(), query.getValues());
+        this.insertIntoHash(query.getObjectInstance(), query.getValues());
     }
 
     @Override
@@ -175,7 +169,7 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
 
         String[] keys = this.getKeys(query.getRequirement()).toArray(new String[0]);
 
-        try (Jedis jedis = this.pool.getResource()) {
+        try (Jedis jedis = this.getResource()) {
             jedis.del(keys);
         }
 
@@ -184,7 +178,7 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
 
     @Override
     public void drop() {
-        try (Jedis jedis = this.pool.getResource()) {
+        try (Jedis jedis = this.getResource()) {
             Set<String> keys = jedis.keys(String.format(STORE_FORMAT, this.table, "*"));
             if (!keys.isEmpty()) {
                 jedis.del(keys.toArray(new String[0]));
@@ -203,7 +197,7 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
     public int getNextAutoIncrementValue() {
         String key = String.format(AUTO_INCREMENT_FORMAT, this.table);
 
-        try (Jedis jedis = this.pool.getResource()) {
+        try (Jedis jedis = this.getResource()) {
             return Math.toIntExact(jedis.incr(key));
         }
     }
@@ -211,7 +205,7 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
     // Internals
 
     private List<T> getAll() {
-        try (Jedis jedis = this.pool.getResource()) {
+        try (Jedis jedis = this.getResource()) {
             Set<String> keys = jedis.keys(String.format(STORE_FORMAT, this.table, "*"));
             List<T> list = Lists.newArrayList();
             for (String key : keys) {
@@ -223,7 +217,7 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
     }
 
     private T getFirst() {
-        try (Jedis jedis = this.pool.getResource()) {
+        try (Jedis jedis = this.getResource()) {
             Set<String> keys = jedis.keys(String.format(STORE_FORMAT, this.table, "*"));
             String key = Iterables.getFirst(keys, null);
             if (key == null) {
@@ -265,7 +259,7 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
     private FieldValue<T>[] getValues(String key) {
         List<FieldValue<T>> list = Lists.newArrayList();
 
-        try (Jedis jedis = this.pool.getResource()) {
+        try (Jedis jedis = this.getResource()) {
             Map<String, String> valueMap = jedis.hgetAll(key);
             if (valueMap.isEmpty()) {
                 return null;
@@ -305,11 +299,11 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
         return String.format(STORE_FORMAT, this.table, builder.toString());
     }
 
-    private void insertIntoHash(T instance, FieldValue<T>[] values) {
+    private void insertIntoHash(Optional<T> objectInstance, FieldValue<T>[] values) {
         PersistentField<T> autoIncrement = this.manager.getProfile().getAutoIncrementField();
         if (autoIncrement != null && ((int) this.manager.getArrayValue(autoIncrement, values)) == 0) {
             int value = this.getNextAutoIncrementValue();
-            autoIncrement.set(instance, value);
+            objectInstance.ifPresent(tValue -> autoIncrement.set(tValue, value));
             this.manager.updateArrayValue(autoIncrement, value, values);
         }
 
@@ -337,7 +331,7 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
     }
 
     private void insertIntoHash(String key, Map<String, String> valuesByKey) {
-        try (Jedis jedis = this.pool.getResource()) {
+        try (Jedis jedis = this.getResource()) {
             jedis.hmset(key, valuesByKey);
         }
     }
@@ -440,7 +434,7 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
         List<String> keys = Lists.newArrayList();
 
         String matcher = builder.toString();
-        try (Jedis jedis = this.pool.getResource()) {
+        try (Jedis jedis = this.getResource()) {
             Map<String, String> indexMap = jedis.hgetAll(key);
 
             for (Entry<String, String> entry : indexMap.entrySet()) {
@@ -456,7 +450,7 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
     }
 
     private void removeFromIndices(String... keys) {
-        try (Jedis jedis = this.pool.getResource()) {
+        try (Jedis jedis = this.getResource()) {
             for (WrappedIndex<T> index : this.manager.getProfile().getIndices()) {
                 String indexKey = this.getIndexHashKey(index.getFields());
                 jedis.hdel(indexKey, keys);
@@ -481,7 +475,7 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
 
     private void addToIndex(PersistentField<T>[] fields, String key, String value) {
         String indexKey = this.getIndexHashKey(fields);
-        try (Jedis jedis = this.pool.getResource()) {
+        try (Jedis jedis = this.getResource()) {
             jedis.hmset(indexKey, ImmutableMap.of(key, value));
         }
     }

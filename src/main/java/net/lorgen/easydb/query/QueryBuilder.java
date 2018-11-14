@@ -2,7 +2,7 @@ package net.lorgen.easydb.query;
 
 import net.lorgen.easydb.FieldValue;
 import net.lorgen.easydb.PersistentField;
-import net.lorgen.easydb.StorageManager;
+import net.lorgen.easydb.ItemRepository;
 import net.lorgen.easydb.StoredItem;
 import net.lorgen.easydb.query.req.QueryRequirement;
 import net.lorgen.easydb.query.req.RequirementBuilder;
@@ -13,7 +13,7 @@ import java.util.List;
 
 public class QueryBuilder<T extends StoredItem> {
 
-    private StorageManager<T> manager;
+    private ItemRepository<T> manager;
     private T instance; // If we wish to pass an instance, we can
 
     // We could consider using a list here, but as this is what e. g. an
@@ -22,7 +22,7 @@ public class QueryBuilder<T extends StoredItem> {
     private FieldValue[] values;
     private QueryRequirement req;
 
-    public QueryBuilder(StorageManager<T> manager) {
+    public QueryBuilder(ItemRepository<T> manager) {
         this.manager = manager;
         this.values = new FieldValue[0];
     }
@@ -32,7 +32,7 @@ public class QueryBuilder<T extends StoredItem> {
 
         // Even tho we pass an instance of T, we still assign the values as we wish to use
         // them instead of querying upon the instance every time we need a value
-        PersistentField<T>[] fields = this.manager.getProfile().getFields();
+        PersistentField<T>[] fields = this.manager.getProfile().getStoredFields();
         for (PersistentField<T> field : fields) {
             this.set(field, field.get(object));
         }

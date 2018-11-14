@@ -2,18 +2,18 @@ package net.lorgen.easydb.access.sql;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
 import net.lorgen.easydb.DataType;
 import net.lorgen.easydb.DatabaseTypeAccessor;
 import net.lorgen.easydb.FieldValue;
+import net.lorgen.easydb.ItemRepository;
 import net.lorgen.easydb.PersistentField;
-import net.lorgen.easydb.StorageManager;
 import net.lorgen.easydb.StoredItem;
 import net.lorgen.easydb.WrappedIndex;
+import net.lorgen.easydb.connection.ConnectionRegistry;
 import net.lorgen.easydb.exception.DeleteQueryException;
 import net.lorgen.easydb.exception.FindQueryException;
 import net.lorgen.easydb.exception.SaveQueryException;
+import net.lorgen.easydb.interact.JoinWrapper;
 import net.lorgen.easydb.query.Query;
 import net.lorgen.easydb.query.req.CombinedRequirement;
 import net.lorgen.easydb.query.req.QueryRequirement;
@@ -37,29 +37,12 @@ import java.util.Map.Entry;
  */
 public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T> {
 
-    private final HikariDataSource dataSource;
-    private final StorageManager<T> manager;
+    private final ItemRepository<T> manager;
     private final String table;
     private final SQLConfiguration sqlConfig;
 
-    public SQLAccessor(SQLConfiguration sqlConfig, StorageManager<T> manager, String table) {
+    public SQLAccessor(SQLConfiguration sqlConfig, ItemRepository<T> manager, String table) {
         this.sqlConfig = sqlConfig;
-        String host = sqlConfig.getHost();
-        int port = sqlConfig.getPort();
-        String database = sqlConfig.getDatabase();
-        String user = sqlConfig.getUser();
-        String password = sqlConfig.getPassword();
-
-        HikariConfig hikariConfig = new HikariConfig();
-        hikariConfig.setJdbcUrl("jdbc:mysql://" + host + ":" + port + "/" + database + "?&serverTimezone=UTC");
-        hikariConfig.setDriverClassName("com.mysql.cj.jdbc.Driver");
-        hikariConfig.setUsername(user);
-        hikariConfig.setPassword(password);
-        hikariConfig.setMinimumIdle(1);
-        hikariConfig.setMaximumPoolSize(10000);
-        hikariConfig.setConnectionTimeout(10000);
-
-        this.dataSource = new HikariDataSource(hikariConfig);
 
         this.manager = manager;
         this.table = table;
@@ -72,12 +55,7 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
      * {@link DataSource data source}.
      */
     public Connection getConnection() {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
-        }
+        return ConnectionRegistry.getInstance().<Connection>getPool(this.sqlConfig).getConnection();
     }
 
     /**
@@ -88,7 +66,7 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
     public void createTable() {
         StringBuilder builder = new StringBuilder("CREATE TABLE IF NOT EXISTS " + this.table + "(");
 
-        PersistentField<T>[] fields = this.manager.getProfile().getFields();
+        PersistentField<T>[] fields = this.manager.getProfile().getStoredFields();
         PersistentField<T>[] keys = this.manager.getProfile().getKeys();
 
         for (PersistentField<T> field : fields) {
@@ -276,11 +254,51 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
 
     @Override
     public List<T> findAll(Query<T> query) {
-        StringBuilder builder = new StringBuilder("SELECT * FROM ")
-          .append(this.getTableName());
+        StringBuilder builder = new StringBuilder("SELECT ");
+
+        PersistentField<T>[] fields = this.manager.getProfile().getFields(); // Get all fields
+
+        for (int i = 0; i < fields.length; i++) {
+            PersistentField<T> field = fields[i];
+            if (i > 0) {
+                builder.append(", ");
+            }
+
+            if (field.getJoinTable() == null) {
+                builder.append("`")
+                  .append(this.table)
+                  .append("`.`")
+                  .append(field.getName())
+                  .append("`");
+                continue;
+            }
+
+            builder.append("`")
+              .append(field.getJoinTable())
+              .append("`.`")
+              .append(field.getName())
+              .append("`");
+        }
+
+        builder.append(" FROM ").append(this.getTableName());
 
         if (query.getRequirement() != null) {
             builder.append(" WHERE ").append(this.toString(query.getRequirement()));
+        }
+
+        for (JoinWrapper join : this.manager.getProfile().getJoins()) {
+            builder.append(" INNER JOIN ")
+              .append("`")
+              .append(join.getTable())
+              .append("` ON `")
+              .append(this.table)
+              .append("`.`")
+              .append(join.getLocalField())
+              .append("` = `")
+              .append(join.getTable())
+              .append("`.`")
+              .append(join.getRemoteField())
+              .append("`");
         }
 
         builder.append(";");
@@ -384,8 +402,6 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
         builder.append(";");
 
         try (Connection connection = this.getConnection()) {
-            System.out.println(builder.toString());
-
             int autoIncrement = this.getCurrentAutoIncrement();
 
             Statement statement = connection.createStatement();
@@ -395,12 +411,12 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
               // If this is the case, the value is already assigned
               || ((int) query.getValue(autoIncrementField).getValue()) != 0
               // If there is no instance present in the query, we have nothing to update
-              || query.getInstance() == null) {
+              || !query.getObjectInstance().isPresent()) {
                 return;
             }
 
             // Update the auto increment field
-            autoIncrementField.set(query.getInstance(), autoIncrement);
+            autoIncrementField.set(query.getObjectInstance().get(), autoIncrement);
         } catch (SQLException e) {
             throw new SaveQueryException("Statement: " + builder.toString(), e, query);
         }

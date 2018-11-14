@@ -2,6 +2,7 @@ package net.lorgen.easydb;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import net.lorgen.easydb.interact.JoinWrapper;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -9,6 +10,7 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class StoredItemProfile<T extends StoredItem> {
@@ -16,9 +18,11 @@ public class StoredItemProfile<T extends StoredItem> {
     private Class<T> typeClass;
     private PersistentField<T>[] keys;
     private PersistentField<T>[] fields;
+    private PersistentField<T>[] storedFields;
     private PersistentField<T> autoIncrementField;
     private WrappedIndex<T>[] indices;
     private WrappedIndex<T>[] uniqueIndices;
+    private JoinWrapper[] joins;
 
     public StoredItemProfile(Class<T> typeClass) {
         this.typeClass = typeClass;
@@ -34,9 +38,19 @@ public class StoredItemProfile<T extends StoredItem> {
             fields.add(new PersistentField<>(index++, typeClass, field));
         }
 
-        this.keys = fields.stream()
+        this.storedFields = fields.stream()
+          .filter(field -> !field.isExternalStore())
+          .toArray(PersistentField[]::new);
+
+        this.keys = Arrays.stream(this.storedFields)
           .filter(PersistentField::isStorageKey)
           .toArray(PersistentField[]::new);
+
+        this.joins = Arrays.stream(this.fields)
+          .filter(field -> field.getJoinTable() != null)
+          .map(JoinWrapper::new)
+          .distinct()
+          .toArray(JoinWrapper[]::new);
 
         if (this.keys.length == 0) {
             // You could store without a key, but then we'd have to do some special handling, at least in Redis. It
@@ -129,6 +143,10 @@ public class StoredItemProfile<T extends StoredItem> {
         return typeClass;
     }
 
+    public PersistentField<T>[] getStoredFields() {
+        return storedFields;
+    }
+
     public PersistentField<T>[] getKeys() {
         return keys;
     }
@@ -149,32 +167,35 @@ public class StoredItemProfile<T extends StoredItem> {
         return uniqueIndices;
     }
 
+    public JoinWrapper[] getJoins() {
+        return joins;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-
-        if (!(o instanceof StoredItemProfile)) return false;
-
+        if (o == null || getClass() != o.getClass()) return false;
         StoredItemProfile<?> that = (StoredItemProfile<?>) o;
-
-        return new EqualsBuilder()
-          .append(typeClass, that.typeClass)
-          .append(keys, that.keys)
-          .append(fields, that.fields)
-          .append(autoIncrementField, that.autoIncrementField)
-          .append(indices, that.indices)
-          .isEquals();
+        return Objects.equals(typeClass, that.typeClass) &&
+          Arrays.equals(keys, that.keys) &&
+          Arrays.equals(fields, that.fields) &&
+          Arrays.equals(storedFields, that.storedFields) &&
+          Objects.equals(autoIncrementField, that.autoIncrementField) &&
+          Arrays.equals(indices, that.indices) &&
+          Arrays.equals(uniqueIndices, that.uniqueIndices) &&
+          Arrays.equals(joins, that.joins);
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 37)
-          .append(typeClass)
-          .append(keys)
-          .append(fields)
-          .append(autoIncrementField)
-          .append(indices)
-          .toHashCode();
+        int result = Objects.hash(typeClass, autoIncrementField);
+        result = 31 * result + Arrays.hashCode(keys);
+        result = 31 * result + Arrays.hashCode(fields);
+        result = 31 * result + Arrays.hashCode(storedFields);
+        result = 31 * result + Arrays.hashCode(indices);
+        result = 31 * result + Arrays.hashCode(uniqueIndices);
+        result = 31 * result + Arrays.hashCode(joins);
+        return result;
     }
 
     @Override
@@ -183,8 +204,11 @@ public class StoredItemProfile<T extends StoredItem> {
           "typeClass=" + typeClass +
           ", keys=" + Arrays.toString(keys) +
           ", fields=" + Arrays.toString(fields) +
+          ", storedFields=" + Arrays.toString(storedFields) +
           ", autoIncrementField=" + autoIncrementField +
           ", indices=" + Arrays.toString(indices) +
+          ", uniqueIndices=" + Arrays.toString(uniqueIndices) +
+          ", joins=" + Arrays.toString(joins) +
           '}';
     }
 }

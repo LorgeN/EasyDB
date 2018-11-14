@@ -35,7 +35,7 @@ public enum DataType implements FieldSerializer {
         // see that this is the issue, and follow the stack trace to find the cause
 
         @Override
-        public boolean returnsPrimitive(StorageManager<?> manager, PersistentField<?> field) {
+        public boolean returnsPrimitive(ItemRepository<?> manager, PersistentField<?> field) {
             throw new UnsupportedOperationException("This operation is not supported by the AUTO data type!");
         }
 
@@ -45,12 +45,12 @@ public enum DataType implements FieldSerializer {
         }
 
         @Override
-        public String toString(StorageManager<?> manager, PersistentField<?> field, Object val) {
+        public String toString(ItemRepository<?> manager, PersistentField<?> field, Object val) {
             throw new UnsupportedOperationException("This operation is not supported by the AUTO data type!");
         }
 
         @Override
-        public Object fromString(StorageManager<?> manager, PersistentField<?> field, String string) {
+        public Object fromString(ItemRepository<?> manager, PersistentField<?> field, String string) {
             throw new UnsupportedOperationException("This operation is not supported by the AUTO data type!");
         }
     },
@@ -74,7 +74,7 @@ public enum DataType implements FieldSerializer {
      */
     BYTE(Byte.class, Byte.TYPE) {
         @Override
-        public Object fromString(StorageManager<?> manager, PersistentField<?> field, String string) {
+        public Object fromString(ItemRepository<?> manager, PersistentField<?> field, String string) {
             return Byte.valueOf(string);
         }
     },
@@ -83,7 +83,7 @@ public enum DataType implements FieldSerializer {
      */
     SHORT(Short.class, Short.TYPE) {
         @Override
-        public Object fromString(StorageManager<?> manager, PersistentField<?> field, String string) {
+        public Object fromString(ItemRepository<?> manager, PersistentField<?> field, String string) {
             return Short.valueOf(string);
         }
     },
@@ -92,7 +92,7 @@ public enum DataType implements FieldSerializer {
      */
     INTEGER(Integer.class, Integer.TYPE) {
         @Override
-        public Object fromString(StorageManager<?> manager, PersistentField<?> field, String string) {
+        public Object fromString(ItemRepository<?> manager, PersistentField<?> field, String string) {
             return Integer.valueOf(string);
         }
     },
@@ -101,7 +101,7 @@ public enum DataType implements FieldSerializer {
      */
     LONG(Long.class, Long.TYPE) {
         @Override
-        public Object fromString(StorageManager<?> manager, PersistentField<?> field, String string) {
+        public Object fromString(ItemRepository<?> manager, PersistentField<?> field, String string) {
             return Long.valueOf(string);
         }
     },
@@ -110,7 +110,7 @@ public enum DataType implements FieldSerializer {
      */
     FLOAT(Float.class, Float.TYPE) {
         @Override
-        public Object fromString(StorageManager<?> manager, PersistentField<?> field, String string) {
+        public Object fromString(ItemRepository<?> manager, PersistentField<?> field, String string) {
             return Float.valueOf(string);
         }
     },
@@ -119,7 +119,7 @@ public enum DataType implements FieldSerializer {
      */
     DOUBLE(Double.class, Double.TYPE) {
         @Override
-        public Object fromString(StorageManager<?> manager, PersistentField<?> field, String string) {
+        public Object fromString(ItemRepository<?> manager, PersistentField<?> field, String string) {
             return Double.valueOf(string);
         }
     },
@@ -128,7 +128,7 @@ public enum DataType implements FieldSerializer {
      */
     BOOLEAN(Boolean.class, Boolean.TYPE) {
         @Override
-        public Object fromString(StorageManager<?> manager, PersistentField<?> field, String string) {
+        public Object fromString(ItemRepository<?> manager, PersistentField<?> field, String string) {
             return Boolean.valueOf(string);
         }
     },
@@ -144,7 +144,7 @@ public enum DataType implements FieldSerializer {
      */
     LIST(List.class) {
         @Override
-        public String toString(StorageManager<?> manager, PersistentField<?> field, Object val) {
+        public String toString(ItemRepository<?> manager, PersistentField<?> field, Object val) {
             JsonArray array = new JsonArray();
 
             List<?> list = (List<?>) val;
@@ -156,7 +156,7 @@ public enum DataType implements FieldSerializer {
         }
 
         @Override
-        public Object fromString(StorageManager<?> manager, PersistentField<?> field, String string) {
+        public Object fromString(ItemRepository<?> manager, PersistentField<?> field, String string) {
             JsonArray array = UtilGSON.PARSER.parse(string).getAsJsonArray();
             // A list only takes 1 type parameter, anything else means something
             // is wrong somewhere
@@ -186,7 +186,7 @@ public enum DataType implements FieldSerializer {
      */
     SET(Set.class) {
         @Override
-        public String toString(StorageManager<?> manager, PersistentField<?> field, Object val) {
+        public String toString(ItemRepository<?> manager, PersistentField<?> field, Object val) {
             JsonArray array = new JsonArray();
 
             Set<?> list = (Set<?>) val;
@@ -198,7 +198,7 @@ public enum DataType implements FieldSerializer {
         }
 
         @Override
-        public Object fromString(StorageManager<?> manager, PersistentField<?> field, String string) {
+        public Object fromString(ItemRepository<?> manager, PersistentField<?> field, String string) {
             JsonArray array = UtilGSON.PARSER.parse(string).getAsJsonArray();
             // A set only takes 1 type parameter, anything else means something
             // is wrong somewhere
@@ -227,7 +227,7 @@ public enum DataType implements FieldSerializer {
      */
     ARRAY() {
         @Override
-        public String toString(StorageManager<?> manager, PersistentField<?> field, Object val) {
+        public String toString(ItemRepository<?> manager, PersistentField<?> field, Object val) {
             JsonArray array = new JsonArray();
             Object[] values = (Object[]) val;
 
@@ -239,7 +239,7 @@ public enum DataType implements FieldSerializer {
         }
 
         @Override
-        public Object fromString(StorageManager<?> manager, PersistentField<?> field, String string) {
+        public Object fromString(ItemRepository<?> manager, PersistentField<?> field, String string) {
             JsonArray array = UtilGSON.PARSER.parse(string).getAsJsonArray();
             int size = array.size();
             Class typeClass = field.getField().getType().getComponentType();
@@ -265,7 +265,7 @@ public enum DataType implements FieldSerializer {
      */
     MAP(Map.class) {
         @Override
-        public String toString(StorageManager<?> manager, PersistentField<?> field, Object val) {
+        public String toString(ItemRepository<?> manager, PersistentField<?> field, Object val) {
             Map<?, ?> map = (Map<?, ?>) val;
             JsonObject object = new JsonObject();
 
@@ -278,7 +278,7 @@ public enum DataType implements FieldSerializer {
         }
 
         @Override
-        public Object fromString(StorageManager<?> manager, PersistentField<?> field, String string) {
+        public Object fromString(ItemRepository<?> manager, PersistentField<?> field, String string) {
             JsonObject object = UtilGSON.PARSER.parse(string).getAsJsonObject();
             // We don't support different types of maps, so we may want to consider
             // something for that in the future
@@ -308,18 +308,18 @@ public enum DataType implements FieldSerializer {
      */
     ENUM() {
         @Override
-        public boolean returnsPrimitive(StorageManager<?> manager, PersistentField<?> field) {
+        public boolean returnsPrimitive(ItemRepository<?> manager, PersistentField<?> field) {
             // We return a simple integer in this case, which is a primitive
             return true;
         }
 
         @Override
-        public String toString(StorageManager<?> manager, PersistentField<?> field, Object val) {
+        public String toString(ItemRepository<?> manager, PersistentField<?> field, Object val) {
             return String.valueOf(((Enum) val).ordinal());
         }
 
         @Override
-        public Object fromString(StorageManager<?> manager, PersistentField<?> field, String string) {
+        public Object fromString(ItemRepository<?> manager, PersistentField<?> field, String string) {
             Class<?> typeClass = field.getField().getType();
             return typeClass.getEnumConstants()[Integer.valueOf(string)];
         }
@@ -339,21 +339,21 @@ public enum DataType implements FieldSerializer {
      */
     CUSTOM() {
         @Override
-        public boolean returnsPrimitive(StorageManager<?> manager, PersistentField<?> field) {
+        public boolean returnsPrimitive(ItemRepository<?> manager, PersistentField<?> field) {
             this.verify(field);
 
             return FieldSerializers.getSerializer(field.getSerializerClass()).returnsPrimitive(manager, field);
         }
 
         @Override
-        public String toString(StorageManager<?> manager, PersistentField<?> field, Object val) {
+        public String toString(ItemRepository<?> manager, PersistentField<?> field, Object val) {
             this.verify(field);
 
             return FieldSerializers.getSerializer(field.getSerializerClass()).toString(manager, field, val);
         }
 
         @Override
-        public Object fromString(StorageManager<?> manager, PersistentField<?> field, String string) {
+        public Object fromString(ItemRepository<?> manager, PersistentField<?> field, String string) {
             this.verify(field);
 
             return FieldSerializers.getSerializer(field.getSerializerClass()).fromString(manager, field, string);
@@ -420,17 +420,17 @@ public enum DataType implements FieldSerializer {
     }
 
     @Override
-    public boolean returnsPrimitive(StorageManager<?> manager, PersistentField<?> field) {
+    public boolean returnsPrimitive(ItemRepository<?> manager, PersistentField<?> field) {
         return this.primitive;
     }
 
     @Override
-    public String toString(StorageManager<?> manager, PersistentField<?> field, Object val) {
+    public String toString(ItemRepository<?> manager, PersistentField<?> field, Object val) {
         return String.valueOf(val);
     }
 
     @Override
-    public Object fromString(StorageManager<?> manager, PersistentField<?> field, String string) {
+    public Object fromString(ItemRepository<?> manager, PersistentField<?> field, String string) {
         return string; // In most cases this method will be overwritten
     }
 

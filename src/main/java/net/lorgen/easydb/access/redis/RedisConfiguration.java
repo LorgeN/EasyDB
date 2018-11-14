@@ -1,7 +1,7 @@
 package net.lorgen.easydb.access.redis;
 
 import net.lorgen.easydb.DatabaseType;
-import net.lorgen.easydb.configuration.ConnectionConfiguration;
+import net.lorgen.easydb.connection.configuration.ConnectionConfiguration;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 

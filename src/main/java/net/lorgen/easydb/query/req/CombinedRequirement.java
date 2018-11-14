@@ -2,6 +2,8 @@ package net.lorgen.easydb.query.req;
 
 import net.lorgen.easydb.query.Operator;
 
+import java.util.Objects;
+
 public class CombinedRequirement implements QueryRequirement {
 
     private QueryRequirement requirement1;
@@ -45,11 +47,33 @@ public class CombinedRequirement implements QueryRequirement {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        CombinedRequirement that = (CombinedRequirement) o;
+        return wrap == that.wrap &&
+          Objects.equals(requirement1, that.requirement1) &&
+          Objects.equals(requirement2, that.requirement2) &&
+          operator == that.operator;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(requirement1, requirement2, operator, wrap);
+    }
+
+    @Override
     public String toString() {
         return "CombinedRequirement{" +
           "requirement1=" + requirement1 +
-          ", operator=" + operator +
           ", requirement2=" + requirement2 +
+          ", operator=" + operator +
           ", wrap=" + wrap +
           '}';
     }

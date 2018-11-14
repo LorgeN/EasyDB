@@ -1,5 +1,7 @@
 package net.lorgen.easydb;
 
+import net.lorgen.easydb.interact.GetFromTable;
+import net.lorgen.easydb.interact.Join;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -7,6 +9,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.Objects;
 
 public class PersistentField<T extends StoredItem> {
 
@@ -22,6 +25,12 @@ public class PersistentField<T extends StoredItem> {
     private boolean autoIncr;
     private boolean index;
     private boolean uniqueIndex;
+    private boolean externalStore;
+    private String joinTable;
+    private String joinLocalField;
+    private String joinExternalField;
+    private String tableStore;
+    private boolean updateOnSave;
     private int[] indexIds;
 
     public PersistentField(int fieldIndex, Class<T> tClass, Field field) {
@@ -45,11 +54,25 @@ public class PersistentField<T extends StoredItem> {
 
         this.size = annotation.size();
         this.typeParams = annotation.typeParams();
+
         this.index = field.isAnnotationPresent(Index.class);
         if (this.index) {
             Index indexAnnot = field.getAnnotation(Index.class);
             this.uniqueIndex = indexAnnot.unique();
             this.indexIds = indexAnnot.value();
+        }
+
+        Join joinData = field.getAnnotation(Join.class);
+        if (joinData != null) {
+            this.externalStore = true;
+            this.joinTable = joinData.table();
+            this.joinLocalField = joinData.localField();
+            this.joinExternalField = joinData.externalField();
+        }
+
+        GetFromTable table = field.getAnnotation(GetFromTable.class);
+        if (table != null) {
+
         }
 
         StorageKey keyAnnot = field.getAnnotation(StorageKey.class);
@@ -91,7 +114,7 @@ public class PersistentField<T extends StoredItem> {
         return new FieldValue<>(this, value);
     }
 
-    public void set(StorageManager<T> manager, T object, String value) {
+    public void set(ItemRepository<T> manager, T object, String value) {
         this.set(object, this.getType().fromString(manager, this, value));
     }
 
@@ -169,30 +192,48 @@ public class PersistentField<T extends StoredItem> {
         return !this.isStorageKey();
     }
 
+    public boolean isExternalStore() {
+        return externalStore;
+    }
+
+    public String getJoinTable() {
+        return joinTable;
+    }
+
+    public String getJoinLocalField() {
+        return joinLocalField;
+    }
+
+    public String getJoinExternalField() {
+        return joinExternalField;
+    }
+
+    public String getTableStore() {
+        return tableStore;
+    }
+
+    public boolean isUpdateOnSave() {
+        return updateOnSave;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
 
-        if (!(o instanceof PersistentField)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
 
         PersistentField<?> that = (PersistentField<?>) o;
-
-        return new EqualsBuilder()
-          .append(tClass, that.tClass)
-          .append(field, that.field)
-          .isEquals();
+        return Objects.equals(tClass, that.tClass) &&
+          Objects.equals(field, that.field);
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 37)
-          .append(tClass)
-          .append(field)
-          .toHashCode();
+        return Objects.hash(tClass, field);
     }
 
     @Override
@@ -200,7 +241,7 @@ public class PersistentField<T extends StoredItem> {
         return "PersistentField{" +
           "fieldIndex=" + fieldIndex +
           ", tClass=" + tClass +
-          ", field=" + field.getName() +
+          ", field=" + field +
           ", name='" + name + '\'' +
           ", type=" + type +
           ", size=" + size +
@@ -209,6 +250,13 @@ public class PersistentField<T extends StoredItem> {
           ", key=" + key +
           ", autoIncr=" + autoIncr +
           ", index=" + index +
+          ", uniqueIndex=" + uniqueIndex +
+          ", externalStore=" + externalStore +
+          ", joinTable='" + joinTable + '\'' +
+          ", joinLocalField='" + joinLocalField + '\'' +
+          ", joinExternalField='" + joinExternalField + '\'' +
+          ", tableStore='" + tableStore + '\'' +
+          ", updateOnSave=" + updateOnSave +
           ", indexIds=" + Arrays.toString(indexIds) +
           '}';
     }

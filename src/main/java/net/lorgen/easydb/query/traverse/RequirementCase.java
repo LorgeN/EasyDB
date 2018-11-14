@@ -6,6 +6,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.util.List;
+import java.util.Objects;
 
 public class RequirementCase {
 
@@ -37,22 +38,17 @@ public class RequirementCase {
             return true;
         }
 
-        if (!(o instanceof RequirementCase)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
 
         RequirementCase that = (RequirementCase) o;
-
-        return new EqualsBuilder()
-          .append(requirements, that.requirements)
-          .isEquals();
+        return Objects.equals(requirements, that.requirements);
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 37)
-          .append(requirements)
-          .toHashCode();
+        return Objects.hash(requirements);
     }
 
     @Override

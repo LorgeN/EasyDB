@@ -1,14 +1,16 @@
 package net.lorgen.easydb.query.req;
 
 import net.lorgen.easydb.PersistentField;
-import net.lorgen.easydb.StorageManager;
+import net.lorgen.easydb.ItemRepository;
 import net.lorgen.easydb.StoredItem;
 import net.lorgen.easydb.query.Operator;
 import net.lorgen.easydb.query.QueryBuilder;
 
+import java.util.Objects;
+
 public class RequirementBuilder<T extends StoredItem> {
 
-    private StorageManager<T> manager;
+    private ItemRepository<T> manager;
 
     private QueryRequirement req;
 
@@ -17,12 +19,12 @@ public class RequirementBuilder<T extends StoredItem> {
     private QueryBuilder<T> builder;
     private RequirementBuilder<T> returnTo;
 
-    public RequirementBuilder(StorageManager<T> manager, QueryBuilder<T> builder) {
+    public RequirementBuilder(ItemRepository<T> manager, QueryBuilder<T> builder) {
         this.manager = manager;
         this.builder = builder;
     }
 
-    public RequirementBuilder(StorageManager<T> manager, int level, Operator returnOp, RequirementBuilder<T> returnTo) {
+    public RequirementBuilder(ItemRepository<T> manager, int level, Operator returnOp, RequirementBuilder<T> returnTo) {
         this.manager = manager;
         this.level = level;
         this.returnOp = returnOp;
@@ -412,6 +414,42 @@ public class RequirementBuilder<T extends StoredItem> {
 
     public QueryRequirement build() {
         return this.req;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        RequirementBuilder<?> that = (RequirementBuilder<?>) o;
+        return level == that.level &&
+          Objects.equals(manager, that.manager) &&
+          Objects.equals(req, that.req) &&
+          returnOp == that.returnOp &&
+          Objects.equals(builder, that.builder) &&
+          Objects.equals(returnTo, that.returnTo);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(manager, req, level, returnOp, builder, returnTo);
+    }
+
+    @Override
+    public String toString() {
+        return "RequirementBuilder{" +
+          "manager=" + manager +
+          ", req=" + req +
+          ", level=" + level +
+          ", returnOp=" + returnOp +
+          ", builder=" + builder +
+          ", returnTo=" + returnTo +
+          '}';
     }
 
     // Internals

@@ -1,6 +1,6 @@
 package net.lorgen.easydb;
 
-import net.lorgen.easydb.configuration.ConnectionConfiguration;
+import net.lorgen.easydb.connection.configuration.ConnectionConfiguration;
 import net.lorgen.easydb.query.Query;
 import net.lorgen.easydb.query.QueryBuilder;
 import net.lorgen.easydb.util.Callback;
@@ -10,30 +10,31 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
-public class StorageManager<T extends StoredItem> {
+public class ItemRepository<T extends StoredItem> {
 
     private String tableName;
     private Class<T> typeClass;
     private StoredItemProfile<T> profile;
     private DatabaseTypeAccessor<T> accessor;
 
-    public StorageManager(ConnectionConfiguration configuration, String tableName, Class<T> typeClass, DataAccessFrequency frequency) {
+    public ItemRepository(ConnectionConfiguration configuration, String tableName, Class<T> typeClass, DataAccessFrequency frequency) {
         this(configuration, tableName, typeClass, frequency.getRecommendedType());
     }
 
-    public StorageManager(ConnectionConfiguration configuration, String tableName, Class<T> typeClass, DatabaseType type) {
+    public ItemRepository(ConnectionConfiguration configuration, String tableName, Class<T> typeClass, DatabaseType type) {
         this.tableName = tableName;
         this.typeClass = typeClass;
         this.profile = new StoredItemProfile<>(this.typeClass);
         this.accessor = type.newAccessor(configuration, this, this.tableName);
     }
 
-    public StorageManager(String tableName, Class<T> typeClass, DataAccessFrequency frequency) {
+    public ItemRepository(String tableName, Class<T> typeClass, DataAccessFrequency frequency) {
         this(tableName, typeClass, frequency.getRecommendedType());
     }
 
-    public StorageManager(String tableName, Class<T> typeClass, DatabaseType type) {
+    public ItemRepository(String tableName, Class<T> typeClass, DatabaseType type) {
         this.tableName = tableName;
         this.typeClass = typeClass;
         this.profile = new StoredItemProfile<>(this.typeClass);
@@ -110,7 +111,11 @@ public class StorageManager<T extends StoredItem> {
     }
 
     public void saveSync(Query<T> query) {
+        query.getObjectInstance().ifPresent(StoredItem::preSave);
+
         this.accessor.saveOrUpdate(query);
+
+        query.getObjectInstance().ifPresent(StoredItem::postSave);
     }
 
     public void deleteAsync(T object) {
@@ -145,7 +150,11 @@ public class StorageManager<T extends StoredItem> {
     }
 
     public void deleteSync(Query<T> query) {
+        query.getObjectInstance().ifPresent(StoredItem::preDelete);
+
         this.accessor.delete(query);
+
+        query.getObjectInstance().ifPresent(StoredItem::postDelete);
     }
 
     public T fromValues(FieldValue<T>[] values) {
@@ -195,6 +204,7 @@ public class StorageManager<T extends StoredItem> {
 
     public void injectArrayValues(T instance, FieldValue<T>[] values) {
         instance.preInject();
+
         for (FieldValue<T> value : values) {
             value.getField().set(instance, value.getValue());
         }
@@ -213,5 +223,37 @@ public class StorageManager<T extends StoredItem> {
           .filter(value -> value.getField().equals(field))
           .map(FieldValue::getValue)
           .findFirst().orElse(null);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ItemRepository<?> that = (ItemRepository<?>) o;
+        return Objects.equals(tableName, that.tableName) &&
+          Objects.equals(typeClass, that.typeClass) &&
+          Objects.equals(profile, that.profile) &&
+          Objects.equals(accessor, that.accessor);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(tableName, typeClass, profile, accessor);
+    }
+
+    @Override
+    public String toString() {
+        return "ItemRepository{" +
+          "tableName='" + tableName + '\'' +
+          ", typeClass=" + typeClass +
+          ", profile=" + profile +
+          ", accessor=" + accessor +
+          '}';
     }
 }

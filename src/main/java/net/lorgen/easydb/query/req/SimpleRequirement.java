@@ -5,6 +5,8 @@ import net.lorgen.easydb.query.Operator;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.util.Objects;
+
 public class SimpleRequirement implements QueryRequirement {
 
     private PersistentField<?> field;
@@ -36,31 +38,31 @@ public class SimpleRequirement implements QueryRequirement {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
+        if (this == o) {
+            return true;
+        }
 
-        if (!(o instanceof SimpleRequirement)) return false;
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         SimpleRequirement that = (SimpleRequirement) o;
-
-        return new EqualsBuilder()
-          .append(field, that.field)
-          .append(operator, that.operator)
-          .append(value, that.value)
-          .isEquals();
+        return Objects.equals(field, that.field) &&
+          operator == that.operator &&
+          Objects.equals(value, that.value);
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 37)
-          .append(field)
-          .append(operator)
-          .append(value)
-          .toHashCode();
+        return Objects.hash(field, operator, value);
     }
 
     @Override
     public String toString() {
-        return "SimpleRequirement{" + field.getName() + "@" + field.getTypeClass() + " " +
-          operator.name() + " " + value + '}';
+        return "SimpleRequirement{" +
+          "field=" + field +
+          ", operator=" + operator +
+          ", value=" + value +
+          '}';
     }
 }

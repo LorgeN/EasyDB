@@ -1,7 +1,7 @@
 package net.lorgen.easydb.test.integration.tests;
 
 import net.lorgen.easydb.PersistentField;
-import net.lorgen.easydb.StorageManager;
+import net.lorgen.easydb.ItemRepository;
 import net.lorgen.easydb.StoredItemProfile;
 import net.lorgen.easydb.test.TestItem;
 import org.junit.FixMethodOrder;
@@ -21,7 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 public class DatabaseIT {
 
     @Parameter(0)
-    public StorageManager<TestItem> manager;
+    public ItemRepository<TestItem> manager;
 
     @Parameter(1)
     public TestItem item;

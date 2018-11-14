@@ -4,6 +4,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 public class WrappedIndex<T extends StoredItem> {
 
@@ -66,30 +67,32 @@ public class WrappedIndex<T extends StoredItem> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
+        if (this == o) {
+            return true;
+        }
 
-        if (!(o instanceof WrappedIndex)) return false;
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         WrappedIndex<?> that = (WrappedIndex<?>) o;
-
-        return new EqualsBuilder()
-          .append(id, that.id)
-          .append(fields, that.fields)
-          .isEquals();
+        return id == that.id &&
+          unique == that.unique &&
+          Arrays.equals(fields, that.fields);
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 37)
-          .append(id)
-          .append(fields)
-          .toHashCode();
+        int result = Objects.hash(id, unique);
+        result = 31 * result + Arrays.hashCode(fields);
+        return result;
     }
 
     @Override
     public String toString() {
         return "WrappedIndex{" +
           "id=" + id +
+          ", unique=" + unique +
           ", fields=" + Arrays.toString(fields) +
           '}';
     }

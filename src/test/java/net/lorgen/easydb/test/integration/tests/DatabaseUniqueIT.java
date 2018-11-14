@@ -2,7 +2,7 @@ package net.lorgen.easydb.test.integration.tests;
 
 import com.google.common.collect.Lists;
 import net.lorgen.easydb.PersistentField;
-import net.lorgen.easydb.StorageManager;
+import net.lorgen.easydb.ItemRepository;
 import net.lorgen.easydb.StoredItemProfile;
 import net.lorgen.easydb.test.TestItem;
 import org.junit.FixMethodOrder;
@@ -27,7 +27,7 @@ public class DatabaseUniqueIT {
     public static final TestItem TEST_ITEM_3 = new TestItem("TestUser", "John", "Foo", "johnfoo@foo.net", 34);
 
     @Parameter(0)
-    public StorageManager<TestItem> manager;
+    public ItemRepository<TestItem> manager;
 
     @Test
     public void testAInsertObject() {
@@ -77,7 +77,7 @@ public class DatabaseUniqueIT {
     @Parameters
     public static Collection<Object[]> data() {
         List<Object[]> cases = Lists.newArrayList();
-        for (StorageManager<TestItem> manager : DatabaseTestSuite.MANAGERS) {
+        for (ItemRepository<TestItem> manager : DatabaseTestSuite.MANAGERS) {
             cases.add(new Object[]{manager});
         }
 
