@@ -17,8 +17,8 @@ public class ProfilerTest {
     private static final PersistentField<TestItem> LASTNAME_FIELD = new PersistentField<>(3, TestItem.class, UtilField.getField(TestItem.class, "lastName"));
     private static final PersistentField<TestItem> EMAIL_FIELD = new PersistentField<>(4, TestItem.class, UtilField.getField(TestItem.class, "email"));
 
-    private static final WrappedIndex<TestItem> NAME_INDEX = new WrappedIndex<>(1, true, FIRSTNAME_FIELD, LASTNAME_FIELD);
-    private static final WrappedIndex<TestItem> USERNAME_INDEX = new WrappedIndex<>(2, false, USERNAME_FIELD);
+    private static final WrappedIndex<TestItem> NAME_INDEX = new WrappedIndex<>(1, false, FIRSTNAME_FIELD, LASTNAME_FIELD);
+    private static final WrappedIndex<TestItem> USERNAME_INDEX = new WrappedIndex<>(2, true, USERNAME_FIELD);
 
     @Test
     public void profilerTest() {
