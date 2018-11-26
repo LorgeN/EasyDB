@@ -1,6 +1,7 @@
-package net.lorgen.easydb;
+package net.lorgen.easydb.field;
 
 import com.google.common.collect.Maps;
+import net.lorgen.easydb.DataType;
 
 import java.util.Map;
 

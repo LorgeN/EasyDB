@@ -1,19 +1,21 @@
-package net.lorgen.easydb;
+package net.lorgen.easydb.profile;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import net.lorgen.easydb.Persist;
+import net.lorgen.easydb.field.PersistentField;
+import net.lorgen.easydb.WrappedIndex;
 import net.lorgen.easydb.interact.JoinWrapper;
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class StoredItemProfile<T extends StoredItem> {
+public class ItemProfile<T> {
 
     private Class<T> typeClass;
     private PersistentField<T>[] keys;
@@ -24,14 +26,29 @@ public class StoredItemProfile<T extends StoredItem> {
     private WrappedIndex<T>[] uniqueIndices;
     private JoinWrapper[] joins;
 
-    public StoredItemProfile(Class<T> typeClass) {
+    public ItemProfile(Class<T> typeClass, PersistentField<T>[] keys, PersistentField<T>[] fields,
+                       PersistentField<T>[] storedFields, PersistentField<T> autoIncrementField,
+                       WrappedIndex<T>[] indices, WrappedIndex<T>[] uniqueIndices, JoinWrapper[] joins) {
+        this.typeClass = typeClass;
+        this.keys = keys;
+        this.fields = fields;
+        this.storedFields = storedFields;
+        this.autoIncrementField = autoIncrementField;
+        this.indices = indices;
+        this.uniqueIndices = uniqueIndices;
+        this.joins = joins;
+    }
+
+    public ItemProfile(Class<T> typeClass) {
         this.typeClass = typeClass;
 
         List<PersistentField<T>> fields = Lists.newArrayList();
 
         int index = 0;
         for (Field field : typeClass.getDeclaredFields()) {
-            if (!field.isAnnotationPresent(Persist.class)) {
+            // This one really doesn't need a lot of explanation
+            // (Unless you don't know what transient is, in that case GOOGLE IT)
+            if (Modifier.isTransient(field.getModifiers())) {
                 continue;
             }
 
@@ -47,7 +64,7 @@ public class StoredItemProfile<T extends StoredItem> {
           .toArray(PersistentField[]::new);
 
         this.joins = Arrays.stream(this.fields)
-          .filter(field -> field.getJoinTable() != null)
+          .filter(PersistentField::isJoined)
           .map(JoinWrapper::new)
           .distinct()
           .toArray(JoinWrapper[]::new);
@@ -173,9 +190,15 @@ public class StoredItemProfile<T extends StoredItem> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        StoredItemProfile<?> that = (StoredItemProfile<?>) o;
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof ItemProfile)) {
+            return false;
+        }
+
+        ItemProfile<?> that = (ItemProfile<?>) o;
         return Objects.equals(typeClass, that.typeClass) &&
           Arrays.equals(keys, that.keys) &&
           Arrays.equals(fields, that.fields) &&

@@ -1,21 +1,25 @@
-package net.lorgen.easydb;
+package net.lorgen.easydb.field;
 
-import net.lorgen.easydb.interact.GetFromTable;
+import net.lorgen.easydb.DataType;
+import net.lorgen.easydb.Index;
+import net.lorgen.easydb.ItemRepository;
+import net.lorgen.easydb.Persist;
+import net.lorgen.easydb.StorageKey;
+import net.lorgen.easydb.interact.External;
 import net.lorgen.easydb.interact.Join;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Objects;
 
-public class PersistentField<T extends StoredItem> {
+public class PersistentField<T> {
 
     private int fieldIndex;
     private Class<T> tClass;
     private Field field;
+    private Class<?> typeClass;
     private String name;
     private DataType type;
     private int size;
@@ -31,29 +35,65 @@ public class PersistentField<T extends StoredItem> {
     private String joinExternalField;
     private String tableStore;
     private boolean updateOnSave;
+    private String[] keyFields;
+    private Class<? extends ItemRepository> repository;
     private int[] indexIds;
+
+    // El constructoro of all constructoros
+    protected PersistentField(int fieldIndex, Class<T> tClass, Field field, String name, DataType type, int size,
+                              Class<?>[] typeParams, Class<? extends FieldSerializer> serializerClass, boolean key,
+                              boolean autoIncr, boolean index, boolean uniqueIndex, boolean externalStore,
+                              String joinTable, String joinLocalField, String joinExternalField, String tableStore,
+                              boolean updateOnSave, String[] keyFields, Class<? extends ItemRepository> repository,
+                              int[] indexIds, Class<?> typeClass) {
+        this.fieldIndex = fieldIndex;
+        this.tClass = tClass;
+        this.field = field;
+        this.name = name;
+        this.type = type;
+        this.size = size;
+        this.typeParams = typeParams;
+        this.serializerClass = serializerClass;
+        this.key = key;
+        this.autoIncr = autoIncr;
+        this.index = index;
+        this.uniqueIndex = uniqueIndex;
+        this.externalStore = externalStore;
+        this.joinTable = joinTable;
+        this.joinLocalField = joinLocalField;
+        this.joinExternalField = joinExternalField;
+        this.tableStore = tableStore;
+        this.updateOnSave = updateOnSave;
+        this.keyFields = keyFields;
+        this.repository = repository;
+        this.indexIds = indexIds;
+        this.typeClass = typeClass;
+    }
 
     public PersistentField(int fieldIndex, Class<T> tClass, Field field) {
         this.fieldIndex = fieldIndex;
         this.tClass = tClass;
         this.field = field;
+        this.typeClass = field.getType();
 
         Persist annotation = field.getAnnotation(Persist.class);
-        if (annotation == null) {
-            throw new IllegalArgumentException("Missing \"Persist\" annotation for field \"" + field.getName() + "\"!");
+        if (annotation != null) {
+            this.name = StringUtils.isEmpty(annotation.name()) ? field.getName() : annotation.name();
+            this.serializerClass = annotation.serializer();
+            this.type = annotation.type() == DataType.AUTO ? (this.serializerClass != DataType.class ? DataType.CUSTOM : DataType.resolve(field)) : annotation.type();
+            this.size = annotation.size();
+            this.typeParams = annotation.typeParams();
+        } else {
+            this.name = field.getName();
+            this.serializerClass = DataType.class;
+            this.type = DataType.resolve(field);
+            this.size = 16;
+            this.typeParams = new Class[0];
         }
-
-        this.name = StringUtils.isEmpty(annotation.name()) ? field.getName() : annotation.name();
-
-        this.serializerClass = annotation.serializer();
-        this.type = annotation.type() == DataType.AUTO ? (this.hasCustomSerializer() ? DataType.CUSTOM : DataType.resolve(field)) : annotation.type();
 
         if (this.type == null) {
             throw new IllegalArgumentException("Unable to find data type for for field \"" + field.getName() + "\"!");
         }
-
-        this.size = annotation.size();
-        this.typeParams = annotation.typeParams();
 
         this.index = field.isAnnotationPresent(Index.class);
         if (this.index) {
@@ -68,11 +108,16 @@ public class PersistentField<T extends StoredItem> {
             this.joinTable = joinData.table();
             this.joinLocalField = joinData.localField();
             this.joinExternalField = joinData.externalField();
-        }
-
-        GetFromTable table = field.getAnnotation(GetFromTable.class);
-        if (table != null) {
-
+            this.repository = joinData.repository();
+        } else {
+            External table = field.getAnnotation(External.class);
+            if (table != null) {
+                this.tableStore = table.table();
+                this.externalStore = !table.saveKeyLocally();
+                this.keyFields = table.keyFields();
+                this.updateOnSave = !table.immutable();
+                this.repository = table.repository();
+            }
         }
 
         StorageKey keyAnnot = field.getAnnotation(StorageKey.class);
@@ -84,19 +129,19 @@ public class PersistentField<T extends StoredItem> {
         this.autoIncr = keyAnnot.autoIncrement();
     }
 
-    public Object get(T object) {
+    public Object getRawFieldValue(T object) {
         Validate.notNull(object);
 
         try {
             boolean accessible = this.field.isAccessible();
             this.field.setAccessible(true);
 
-            Object val = this.field.get(object);
+            Object value = this.field.get(object);
 
             // Restore to previous state
             this.field.setAccessible(accessible);
 
-            return val;
+            return value;
         } catch (IllegalAccessException e) {
             e.printStackTrace();
             return null;
@@ -106,7 +151,7 @@ public class PersistentField<T extends StoredItem> {
     public FieldValue<T> getValue(T object) {
         Validate.notNull(object);
 
-        Object value = this.get(object);
+        Object value = this.getRawFieldValue(object);
         if (value == null && !this.canBeNull()) {
             throw new NullPointerException("Field tagged as not-null \"" + this.field.getName() + "\" is null in given object!");
         }
@@ -119,6 +164,10 @@ public class PersistentField<T extends StoredItem> {
     }
 
     public void set(T object, Object value) {
+        if (this.field == null) {
+            return;
+        }
+
         try {
             boolean accessible = this.field.isAccessible();
             this.field.setAccessible(true);
@@ -136,8 +185,12 @@ public class PersistentField<T extends StoredItem> {
         return fieldIndex;
     }
 
-    public Class<T> getTypeClass() {
+    public Class<T> getDeclaringClass() {
         return tClass;
+    }
+
+    public Class<?> getTypeClass() {
+        return typeClass;
     }
 
     public Field getField() {
@@ -196,6 +249,10 @@ public class PersistentField<T extends StoredItem> {
         return externalStore;
     }
 
+    public boolean isJoined() {
+        return this.getJoinTable() != null;
+    }
+
     public String getJoinTable() {
         return joinTable;
     }
@@ -208,12 +265,28 @@ public class PersistentField<T extends StoredItem> {
         return joinExternalField;
     }
 
-    public String getTableStore() {
+    public String getExternalTable() {
         return tableStore;
     }
 
     public boolean isUpdateOnSave() {
         return updateOnSave;
+    }
+
+    public boolean isKey() {
+        return key;
+    }
+
+    public boolean isAutoIncr() {
+        return autoIncr;
+    }
+
+    public String[] getKeyFields() {
+        return keyFields;
+    }
+
+    public Class<? extends ItemRepository> getRepository() {
+        return repository;
     }
 
     @Override
@@ -257,6 +330,7 @@ public class PersistentField<T extends StoredItem> {
           ", joinExternalField='" + joinExternalField + '\'' +
           ", tableStore='" + tableStore + '\'' +
           ", updateOnSave=" + updateOnSave +
+          ", repository=" + repository +
           ", indexIds=" + Arrays.toString(indexIds) +
           '}';
     }

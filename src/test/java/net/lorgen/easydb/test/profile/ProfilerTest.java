@@ -1,7 +1,7 @@
 package net.lorgen.easydb.test.profile;
 
-import net.lorgen.easydb.PersistentField;
-import net.lorgen.easydb.StoredItemProfile;
+import net.lorgen.easydb.field.PersistentField;
+import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.WrappedIndex;
 import net.lorgen.easydb.test.TestItem;
 import net.lorgen.easydb.util.reflection.UtilField;
@@ -22,7 +22,7 @@ public class ProfilerTest {
 
     @Test
     public void profilerTest() {
-        StoredItemProfile<TestItem> profile = new StoredItemProfile<>(TestItem.class);
+        ItemProfile<TestItem> profile = new ItemProfile<>(TestItem.class);
 
         assertThat(profile.getTypeClass()).isEqualTo(TestItem.class);
 

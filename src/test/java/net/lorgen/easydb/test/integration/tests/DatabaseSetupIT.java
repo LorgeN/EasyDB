@@ -1,7 +1,8 @@
 package net.lorgen.easydb.test.integration.tests;
 
 import com.google.common.collect.Lists;
-import net.lorgen.easydb.ItemRepository;
+import net.lorgen.easydb.SimpleRepository;
+import net.lorgen.easydb.response.ResponseEntity;
 import net.lorgen.easydb.test.TestItem;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -21,7 +22,7 @@ import static com.google.common.truth.Truth.assertThat;
 public class DatabaseSetupIT {
 
     @Parameter
-    public ItemRepository<TestItem> manager;
+    public SimpleRepository<TestItem> manager;
 
     @Test
     public void testADrop() {
@@ -35,7 +36,7 @@ public class DatabaseSetupIT {
 
     @Test
     public void testCAssertReset() {
-        List<TestItem> list = this.manager.newQuery().findAllSync();
+        List<ResponseEntity<TestItem>> list = this.manager.newQuery().findAllSync();
 
         assertThat(list).isEmpty();
     }
@@ -43,7 +44,7 @@ public class DatabaseSetupIT {
     @Parameters
     public static Collection<Object[]> data() {
         List<Object[]> cases = Lists.newArrayList();
-        for (ItemRepository<TestItem> manager : DatabaseTestSuite.MANAGERS) {
+        for (SimpleRepository<TestItem> manager : DatabaseTestSuite.MANAGERS) {
             cases.add(new Object[]{manager});
         }
 

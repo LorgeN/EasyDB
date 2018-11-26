@@ -4,10 +4,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import net.lorgen.easydb.DataType;
 import net.lorgen.easydb.DatabaseTypeAccessor;
-import net.lorgen.easydb.FieldValue;
+import net.lorgen.easydb.field.FieldValue;
 import net.lorgen.easydb.ItemRepository;
-import net.lorgen.easydb.PersistentField;
-import net.lorgen.easydb.StoredItem;
+import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.WrappedIndex;
 import net.lorgen.easydb.connection.ConnectionRegistry;
 import net.lorgen.easydb.exception.DeleteQueryException;
@@ -18,6 +17,7 @@ import net.lorgen.easydb.query.Query;
 import net.lorgen.easydb.query.req.CombinedRequirement;
 import net.lorgen.easydb.query.req.QueryRequirement;
 import net.lorgen.easydb.query.req.SimpleRequirement;
+import net.lorgen.easydb.response.ResponseEntity;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -35,16 +35,16 @@ import java.util.Map.Entry;
  *
  * @param <T> The type this accessor handles
  */
-public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T> {
+public class SQLAccessor<T> implements DatabaseTypeAccessor<T> {
 
-    private final ItemRepository<T> manager;
+    private final ItemRepository<T> repository;
     private final String table;
     private final SQLConfiguration sqlConfig;
 
-    public SQLAccessor(SQLConfiguration sqlConfig, ItemRepository<T> manager, String table) {
+    public SQLAccessor(SQLConfiguration sqlConfig, ItemRepository<T> repository, String table) {
         this.sqlConfig = sqlConfig;
 
-        this.manager = manager;
+        this.repository = repository;
         this.table = table;
 
         this.createTable();
@@ -66,8 +66,8 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
     public void createTable() {
         StringBuilder builder = new StringBuilder("CREATE TABLE IF NOT EXISTS " + this.table + "(");
 
-        PersistentField<T>[] fields = this.manager.getProfile().getStoredFields();
-        PersistentField<T>[] keys = this.manager.getProfile().getKeys();
+        PersistentField<T>[] fields = this.repository.getProfile().getStoredFields();
+        PersistentField<T>[] keys = this.repository.getProfile().getKeys();
 
         for (PersistentField<T> field : fields) {
             builder.append(this.toColumnDeclaration(field));
@@ -102,7 +102,7 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
      * automatically along with table creation.
      */
     public void createIndices() {
-        WrappedIndex<T>[] indices = this.manager.getProfile().getIndices();
+        WrappedIndex<T>[] indices = this.repository.getProfile().getIndices();
         if (indices.length == 0) {
             return;
         }
@@ -121,13 +121,11 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
                 "    unique_index   TINYINT(1)" +
                 ") BEGIN " +
                 "    DECLARE IndexExists INTEGER;" +
-
                 "    SELECT COUNT(1) INTO IndexExists" +
                 "    FROM INFORMATION_SCHEMA.STATISTICS" +
                 "    WHERE table_schema = given_database" +
                 "    AND   table_name   = given_table" +
                 "    AND   index_name   = given_index;" +
-
                 "    IF IndexExists = 0 THEN" +
                 "        IF unique_index = 1 THEN" +
                 "            SET @sqlstmt = CONCAT('CREATE UNIQUE INDEX ',given_index,' ON '," +
@@ -230,7 +228,7 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
     }
 
     @Override
-    public T findFirst(Query<T> query) {
+    public ResponseEntity<T> findFirst(Query<T> query) {
         StringBuilder builder = new StringBuilder("SELECT * FROM ")
           .append(this.getTableName());
 
@@ -253,10 +251,10 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
     }
 
     @Override
-    public List<T> findAll(Query<T> query) {
+    public List<ResponseEntity<T>> findAll(Query<T> query) {
         StringBuilder builder = new StringBuilder("SELECT ");
 
-        PersistentField<T>[] fields = this.manager.getProfile().getFields(); // Get all fields
+        PersistentField<T>[] fields = this.repository.getProfile().getFields(); // Get all fields
 
         for (int i = 0; i < fields.length; i++) {
             PersistentField<T> field = fields[i];
@@ -264,7 +262,7 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
                 builder.append(", ");
             }
 
-            if (field.getJoinTable() == null) {
+            if (!field.isJoined()) {
                 builder.append("`")
                   .append(this.table)
                   .append("`.`")
@@ -286,7 +284,7 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
             builder.append(" WHERE ").append(this.toString(query.getRequirement()));
         }
 
-        for (JoinWrapper join : this.manager.getProfile().getJoins()) {
+        for (JoinWrapper join : this.repository.getProfile().getJoins()) {
             builder.append(" INNER JOIN ")
               .append("`")
               .append(join.getTable())
@@ -305,7 +303,7 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
 
         try (Connection connection = this.getConnection()) {
             ResultSet result = connection.createStatement().executeQuery(builder.toString());
-            List<T> list = Lists.newArrayList();
+            List<ResponseEntity<T>> list = Lists.newArrayList();
 
             while (result.next()) {
                 list.add(this.fromResultSet(result));
@@ -330,7 +328,7 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
                 FieldValue<T> value = values[i];
                 Object fieldVal = value.getValue();
                 DataType type = value.getField().getType();
-                String quotedVal = this.quote(type.toString(this.manager, value.getField(), fieldVal), value.getField());
+                String quotedVal = this.quote(type.toString(this.repository, value.getField(), fieldVal), value.getField());
 
                 builder
                   .append("`")
@@ -362,12 +360,12 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
         StringBuilder valuesBuilder = new StringBuilder();
         StringBuilder updateBuilder = new StringBuilder();
 
-        PersistentField<T> autoIncrementField = this.manager.getProfile().getAutoIncrementField();
+        PersistentField<T> autoIncrementField = this.repository.getProfile().getAutoIncrementField();
 
         PersistentField<T>[] fields = autoIncrementField == null
-          ? this.manager.getProfile().getFields()
-          : Arrays.stream(this.manager.getProfile().getFields())
-          .filter(field -> !field.isAutoIncrement() || ((int) this.manager.getArrayValue(field, query.getValues())) != 0)
+          ? this.repository.getProfile().getFields()
+          : Arrays.stream(this.repository.getProfile().getFields())
+          .filter(field -> !field.isAutoIncrement() || ((int) this.repository.getArrayValue(field, query.getValues())) != 0)
           .toArray(PersistentField[]::new);
 
         for (int i = 0; i < fields.length; i++) {
@@ -378,7 +376,7 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
 
             FieldValue<T> value = query.getValue(field);
 
-            String valueStr = value.getValue() == null ? "null" : this.quote(field.getType().toString(this.manager, field, value.getValue()), field);
+            String valueStr = value.getValue() == null ? "null" : this.quote(field.getType().toString(this.repository, field, value.getValue()), field);
 
             builder.append("`").append(field.getName()).append("`");
             valuesBuilder.append(valueStr);
@@ -465,23 +463,25 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
         return "`" + this.table + "`";
     }
 
-    private T fromResultSet(ResultSet set) {
-        return this.manager.fromValues(this.getValuesFromResultSet(set));
+    private ResponseEntity<T> fromResultSet(ResultSet set) {
+        return new ResponseEntity<>(this.repository.getProfile(), this.getValuesFromResultSet(set));
     }
 
     private FieldValue<T>[] getValuesFromResultSet(ResultSet set) {
         try {
-            PersistentField<T>[] fields = this.manager.getProfile().getFields();
+            PersistentField<T>[] fields = this.repository.getProfile().getFields();
             FieldValue<T>[] values = new FieldValue[fields.length];
             for (int i = 0; i < fields.length; i++) {
                 PersistentField<T> field = fields[i];
                 Object value = set.getObject(field.getName());
-                if (field.getType().returnsPrimitive(this.manager, field)) {
+                /*
+                if (field.getType().returnsPrimitive(this.repository, field)) {
                     values[i] = new FieldValue<>(field, value);
                     continue;
                 }
+                */
 
-                values[i] = new FieldValue<>(field, field.getType().fromString(this.manager, field, (String) value));
+                values[i] = new FieldValue<>(field, field.getType().fromString(this.repository, field, (String) value));
             }
 
             return values;
@@ -493,7 +493,7 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
 
     private String quote(String serialized, PersistentField<T> field) {
         // Primitive types don't need escape characters
-        if (field.getType().returnsPrimitive(this.manager, field)) {
+        if (field.getType().returnsPrimitive(this.repository, field)) {
             return serialized;
         }
 
@@ -504,7 +504,7 @@ public class SQLAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T
     private String toString(QueryRequirement requirement) {
         if (requirement instanceof SimpleRequirement) {
             SimpleRequirement req = (SimpleRequirement) requirement;
-            String value = req.getField().getType().toString(this.manager, req.getField(), req.getValue());
+            String value = req.getField().getType().toString(this.repository, req.getField(), req.getValue());
             return "`" + req.getField().getName() + "`" + req.getOperator() + this.quote(value, (PersistentField<T>) req.getField());
         }
 

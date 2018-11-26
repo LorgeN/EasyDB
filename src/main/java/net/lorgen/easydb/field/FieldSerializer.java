@@ -1,5 +1,6 @@
-package net.lorgen.easydb;
+package net.lorgen.easydb.field;
 
+import net.lorgen.easydb.ItemRepository;
 import net.lorgen.easydb.util.UtilType;
 
 /**

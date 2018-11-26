@@ -5,35 +5,30 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import net.lorgen.easydb.DatabaseTypeAccessor;
-import net.lorgen.easydb.FieldValue;
-import net.lorgen.easydb.PersistentField;
-import net.lorgen.easydb.ItemRepository;
-import net.lorgen.easydb.StoredItem;
-import net.lorgen.easydb.StoredItemProfile;
-import net.lorgen.easydb.WrappedIndex;
+import net.lorgen.easydb.*;
+import net.lorgen.easydb.field.FieldValue;
+import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.connection.ConnectionRegistry;
+import net.lorgen.easydb.interact.JoinWrapper;
+import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.query.Operator;
 import net.lorgen.easydb.query.Query;
 import net.lorgen.easydb.query.req.QueryRequirement;
 import net.lorgen.easydb.query.req.SimpleRequirement;
 import net.lorgen.easydb.query.traverse.RequirementCase;
 import net.lorgen.easydb.query.traverse.RequirementTraverser;
+import net.lorgen.easydb.response.ResponseEntity;
 import redis.clients.jedis.Jedis;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
 
 /**
  * Redis database type accessor
  *
  * @param <T> The type this accessor handles
  */
-public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor<T> {
+public class RedisAccessor<T> implements DatabaseTypeAccessor<T> {
 
     /**
      * The format of the key in the Redis database
@@ -60,14 +55,18 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
      * use "INCR" to increment, and use the returned value as ID val
      */
 
-    private final ItemRepository<T> manager;
+    private final ItemRepository<T> repository;
     private final String table;
     private final RedisConfiguration configuration;
+    private final RedisJoinWrapper[] joinWrappers;
 
-    public RedisAccessor(RedisConfiguration config, ItemRepository<T> manager, String table) {
-        this.manager = manager;
+    public RedisAccessor(RedisConfiguration config, ItemRepository<T> repository, String table) {
+        this.repository = repository;
         this.table = table;
         this.configuration = config;
+        this.joinWrappers = Arrays.stream(repository.getProfile().getJoins())
+                .map(wrapper -> new RedisJoinWrapper(wrapper, this))
+                .toArray(RedisJoinWrapper[]::new);
 
         this.setUp();
     }
@@ -78,7 +77,7 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
 
     @Override
     public void setUp() {
-        if (this.manager.getProfile().getAutoIncrementField() == null) {
+        if (this.repository.getProfile().getAutoIncrementField() == null) {
             return;
         }
 
@@ -94,7 +93,7 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
     }
 
     @Override
-    public T findFirst(Query<T> query) {
+    public ResponseEntity<T> findFirst(Query<T> query) {
         if (query.getRequirement() == null) {
             return this.getFirst();
         }
@@ -103,7 +102,7 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
     }
 
     @Override
-    public List<T> findAll(Query<T> query) {
+    public List<ResponseEntity<T>> findAll(Query<T> query) {
         if (query.getRequirement() == null) {
             return this.getAll();
         }
@@ -122,7 +121,7 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
             for (String key : keys) {
                 FieldValue<T>[] currentValues = this.getValues(key);
                 for (FieldValue<T> newValue : newValues) {
-                    this.manager.updateArrayValue(newValue.getField(), newValue.getValue(), currentValues);
+                    this.repository.updateArrayValue(newValue.getField(), newValue.getValue(), currentValues);
                 }
 
                 // Current values have been updated
@@ -137,10 +136,10 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
 
         // We now have a new T instance to save
         // First; Verify all unique fields:
-        for (WrappedIndex<T> index : this.manager.getProfile().getUniqueIndices()) {
+        for (WrappedIndex<T> index : this.repository.getProfile().getUniqueIndices()) {
             FieldValue<T>[] values = Arrays.stream(index.getFields())
-              .map(field -> new FieldValue<>(field, this.manager.getArrayValue(field, query.getValues())))
-              .toArray(FieldValue[]::new);
+                    .map(field -> new FieldValue<>(field, this.repository.getArrayValue(field, query.getValues())))
+                    .toArray(FieldValue[]::new);
 
             List<String> keys = this.getKeys(values);
             if (keys.isEmpty()) {
@@ -184,11 +183,11 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
                 jedis.del(keys.toArray(new String[0]));
             }
 
-            for (WrappedIndex<T> index : this.manager.getProfile().getIndices()) {
+            for (WrappedIndex<T> index : this.repository.getProfile().getIndices()) {
                 jedis.del(this.getIndexHashKey(index.getFields()));
             }
 
-            if (this.manager.getProfile().getAutoIncrementField() != null) {
+            if (this.repository.getProfile().getAutoIncrementField() != null) {
                 jedis.del(String.format(AUTO_INCREMENT_FORMAT, this.table));
             }
         }
@@ -204,10 +203,10 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
 
     // Internals
 
-    private List<T> getAll() {
+    private List<ResponseEntity<T>> getAll() {
         try (Jedis jedis = this.getResource()) {
             Set<String> keys = jedis.keys(String.format(STORE_FORMAT, this.table, "*"));
-            List<T> list = Lists.newArrayList();
+            List<ResponseEntity<T>> list = Lists.newArrayList();
             for (String key : keys) {
                 list.add(this.getObject(key));
             }
@@ -216,7 +215,7 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
         }
     }
 
-    private T getFirst() {
+    private ResponseEntity<T> getFirst() {
         try (Jedis jedis = this.getResource()) {
             Set<String> keys = jedis.keys(String.format(STORE_FORMAT, this.table, "*"));
             String key = Iterables.getFirst(keys, null);
@@ -228,9 +227,9 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
         }
     }
 
-    private List<T> getAll(QueryRequirement requirement) {
+    private List<ResponseEntity<T>> getAll(QueryRequirement requirement) {
         List<String> keys = this.getKeys(requirement);
-        List<T> list = Lists.newArrayList();
+        List<ResponseEntity<T>> list = Lists.newArrayList();
         for (String key : keys) {
             list.add(this.getObject(key));
         }
@@ -238,7 +237,7 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
         return list;
     }
 
-    private T getFirst(QueryRequirement requirement) {
+    private ResponseEntity<T> getFirst(QueryRequirement requirement) {
         List<String> keys = this.getKeys(requirement);
         if (keys.size() == 0) {
             return null;
@@ -247,13 +246,13 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
         return this.getObject(keys.get(0));
     }
 
-    private T getObject(String key) {
+    private ResponseEntity<T> getObject(String key) {
         FieldValue<T>[] values = this.getValues(key);
         if (values == null) {
             return null;
         }
 
-        return this.manager.fromValues(values);
+        return new ResponseEntity<>(this.repository.getProfile(), values);
     }
 
     private FieldValue<T>[] getValues(String key) {
@@ -266,13 +265,39 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
             }
 
             for (Entry<String, String> entry : valueMap.entrySet()) {
-                PersistentField<T> field = this.manager.getProfile().resolveField(entry.getKey());
+                PersistentField<T> field = this.repository.getProfile().resolveField(entry.getKey());
                 if (field == null) {
                     throw new IllegalArgumentException("Unknown field \"" + entry.getKey() + "\"!");
                 }
 
-                Object value = field.getType().fromString(this.manager, field, entry.getValue());
+                Object value = field.getType().fromString(this.repository, field, entry.getValue());
                 list.add(new FieldValue<>(field, value));
+            }
+
+            // Handle joins
+            FieldValue<T>[] values = list.toArray(new FieldValue[0]);
+
+            // First; Get all values
+            List<FieldValue> joinValues = Lists.newArrayList();
+            for (RedisJoinWrapper joinWrapper : this.joinWrappers) {
+                Collections.addAll(joinValues, joinWrapper.getValues(values));
+            }
+
+            // Then; Compute into usable data
+            fields:
+            for (PersistentField<T> field : this.repository.getProfile().getFields()) {
+                if (!field.isJoined()) {
+                    continue;
+                }
+
+                for (FieldValue value : joinValues) {
+                    if (!value.getField().getName().equals(field.getName())) {
+                        continue;
+                    }
+
+                    list.add(new FieldValue<>(field, value.getValue()));
+                    continue fields;
+                }
             }
         }
 
@@ -280,7 +305,7 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
     }
 
     private String getKey(FieldValue<T>[] values) {
-        PersistentField<T>[] keys = this.manager.getProfile().getKeys();
+        PersistentField<T>[] keys = this.repository.getProfile().getKeys();
         StringBuilder builder = new StringBuilder();
 
         for (PersistentField<T> key : keys) {
@@ -288,31 +313,31 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
                 builder.append(":");
             }
 
-            Object value = this.manager.getArrayValue(key, values);
+            Object value = this.repository.getArrayValue(key, values);
             if (value == null) {
                 throw new IllegalArgumentException("Missing value for key \"" + key.getName() + "\"!");
             }
 
-            builder.append(key.getType().toString(this.manager, key, value));
+            builder.append(key.getType().toString(this.repository, key, value));
         }
 
         return String.format(STORE_FORMAT, this.table, builder.toString());
     }
 
     private void insertIntoHash(Optional<T> objectInstance, FieldValue<T>[] values) {
-        PersistentField<T> autoIncrement = this.manager.getProfile().getAutoIncrementField();
-        if (autoIncrement != null && ((int) this.manager.getArrayValue(autoIncrement, values)) == 0) {
+        PersistentField<T> autoIncrement = this.repository.getProfile().getAutoIncrementField();
+        if (autoIncrement != null && ((int) this.repository.getArrayValue(autoIncrement, values)) == 0) {
             int value = this.getNextAutoIncrementValue();
             objectInstance.ifPresent(tValue -> autoIncrement.set(tValue, value));
-            this.manager.updateArrayValue(autoIncrement, value, values);
+            this.repository.updateArrayValue(autoIncrement, value, values);
         }
 
         this.insertIntoHash(values);
     }
 
     private void insertIntoHash(FieldValue<T>[] values) {
-        PersistentField<T> autoIncrement = this.manager.getProfile().getAutoIncrementField();
-        if (autoIncrement != null && ((int) this.manager.getArrayValue(autoIncrement, values)) == 0) {
+        PersistentField<T> autoIncrement = this.repository.getProfile().getAutoIncrementField();
+        if (autoIncrement != null && ((int) this.repository.getArrayValue(autoIncrement, values)) == 0) {
             throw new IllegalArgumentException("Missing value for auto increment field \"" + autoIncrement.getName() + "\"");
         }
 
@@ -323,7 +348,7 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
         Map<String, String> map = Maps.newHashMap();
         for (FieldValue<T> value : values) {
             PersistentField<T> field = value.getField();
-            map.put(field.getName(), field.getType().toString(this.manager, field, value.getValue()));
+            map.put(field.getName(), field.getType().toString(this.repository, field, value.getValue()));
         }
 
         this.addToIndices(key, values);
@@ -358,10 +383,10 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
 
     @SafeVarargs
     private final List<String> getKeys(FieldValue<T>... values) {
-        StoredItemProfile<T> profile = this.manager.getProfile();
+        ItemProfile<T> profile = this.repository.getProfile();
         PersistentField<T>[] fields = Arrays.stream(values)
-          .map(FieldValue::getField)
-          .toArray(PersistentField[]::new);
+                .map(FieldValue::getField)
+                .toArray(PersistentField[]::new);
 
         if (profile.areKeys(fields)) {
             return Lists.newArrayList(this.getKey(values));
@@ -427,8 +452,8 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
                 builder.append(":");
             }
 
-            Object value = this.manager.getArrayValue(field, values);
-            builder.append(field.getType().toString(this.manager, field, value));
+            Object value = this.repository.getArrayValue(field, values);
+            builder.append(field.getType().toString(this.repository, field, value));
         }
 
         List<String> keys = Lists.newArrayList();
@@ -451,7 +476,7 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
 
     private void removeFromIndices(String... keys) {
         try (Jedis jedis = this.getResource()) {
-            for (WrappedIndex<T> index : this.manager.getProfile().getIndices()) {
+            for (WrappedIndex<T> index : this.repository.getProfile().getIndices()) {
                 String indexKey = this.getIndexHashKey(index.getFields());
                 jedis.hdel(indexKey, keys);
             }
@@ -459,14 +484,14 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
     }
 
     private void addToIndices(String key, FieldValue<T>[] values) {
-        for (WrappedIndex<T> index : this.manager.getProfile().getIndices()) {
+        for (WrappedIndex<T> index : this.repository.getProfile().getIndices()) {
             StringBuilder builder = new StringBuilder();
             for (PersistentField<T> field : index.getFields()) {
                 if (!builder.toString().isEmpty()) {
                     builder.append(":");
                 }
 
-                builder.append(field.getType().toString(this.manager, field, this.manager.getArrayValue(field, values)));
+                builder.append(field.getType().toString(this.repository, field, this.repository.getArrayValue(field, values)));
             }
 
             this.addToIndex(index.getFields(), key, builder.toString());
@@ -491,5 +516,39 @@ public class RedisAccessor<T extends StoredItem> implements DatabaseTypeAccessor
         }
 
         return String.format(INDEX_HASH_FORMAT, this.table, builder.toString());
+    }
+
+    public static class RedisJoinWrapper<T> extends JoinWrapper {
+
+        private RedisAccessor<T> accessor;
+        private ItemRepository<?> repository;
+
+        public RedisJoinWrapper(JoinWrapper wrapper, RedisAccessor<T> accessor) {
+            super(wrapper);
+            this.accessor = accessor;
+
+            // This repository must already exist. We do not have sufficient data to create it. A
+            // Join should be on something else that already exists either way, so it is not a major
+            // flaw in the system
+            this.repository = Repositories.getRepository(DatabaseType.REDIS, this.getTable(), null, this.getRepository());
+
+            if (this.repository == null) {
+                throw new IllegalArgumentException("Could not find repository for join " + this + "!");
+            }
+        }
+
+        public ItemRepository<?> getRepositoryInstance() {
+            return repository;
+        }
+
+        public FieldValue<?>[] getValues(FieldValue<T>[] values) {
+            Object localFieldValue = this.accessor.repository.getArrayValue(this.accessor.repository.getProfile().resolveField(this.getLocalField()), values);
+
+            ResponseEntity<?> response = this.repository.newQuery()
+                    .where().equals(this.getRemoteField(), localFieldValue).closeAll()
+                    .findFirstSync();
+
+            return response.getValues();
+        }
     }
 }

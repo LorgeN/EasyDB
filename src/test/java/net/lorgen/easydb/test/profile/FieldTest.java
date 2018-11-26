@@ -2,8 +2,8 @@ package net.lorgen.easydb.test.profile;
 
 import com.google.common.collect.Lists;
 import net.lorgen.easydb.DataType;
-import net.lorgen.easydb.FieldSerializer;
-import net.lorgen.easydb.PersistentField;
+import net.lorgen.easydb.field.FieldSerializer;
+import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.test.TestItem;
 import net.lorgen.easydb.util.reflection.UtilField;
 import org.junit.Test;

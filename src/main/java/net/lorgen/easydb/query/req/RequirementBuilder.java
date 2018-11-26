@@ -1,14 +1,13 @@
 package net.lorgen.easydb.query.req;
 
-import net.lorgen.easydb.PersistentField;
+import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.ItemRepository;
-import net.lorgen.easydb.StoredItem;
 import net.lorgen.easydb.query.Operator;
 import net.lorgen.easydb.query.QueryBuilder;
 
 import java.util.Objects;
 
-public class RequirementBuilder<T extends StoredItem> {
+public class RequirementBuilder<T> {
 
     private ItemRepository<T> manager;
 
@@ -254,7 +253,7 @@ public class RequirementBuilder<T extends StoredItem> {
         RequirementBuilder<T> down = this.open();
 
         for (PersistentField<T> key : keys) {
-            down.andEquals(key, key.get(object));
+            down.andEquals(key, key.getRawFieldValue(object));
         }
 
         return down.closeCurrent(); // Returns this
@@ -266,7 +265,7 @@ public class RequirementBuilder<T extends StoredItem> {
         RequirementBuilder<T> down = this.andOpen();
 
         for (PersistentField<T> key : keys) {
-            down.andEquals(key, key.get(object));
+            down.andEquals(key, key.getRawFieldValue(object));
         }
 
         return down.closeCurrent(); // Returns this
@@ -278,7 +277,7 @@ public class RequirementBuilder<T extends StoredItem> {
         RequirementBuilder<T> down = this.orOpen();
 
         for (PersistentField<T> key : keys) {
-            down.andEquals(key, key.get(object));
+            down.andEquals(key, key.getRawFieldValue(object));
         }
 
         return down.closeCurrent(); // Returns this

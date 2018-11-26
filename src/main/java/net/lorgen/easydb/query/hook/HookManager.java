@@ -6,8 +6,10 @@ import net.lorgen.easydb.query.Query;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
-public class HookManager<T extends StoredItem> {
+public class HookManager<T> {
 
     private List<InteractionHook<T>> hooks;
 
@@ -20,35 +22,55 @@ public class HookManager<T extends StoredItem> {
         Collections.addAll(this.hooks, hooks);
     }
 
-    public void onSave(SingleCaseHook<T> hook) {
-        this.registerHooks(new SaveHookWrapper<>(hook));
+    public void onSave(Consumer<Query<T>> consumer) {
+        this.registerHooks(new InteractionHook<T>() {
+            @Override
+            public void onSave(Query<T> query) {
+                consumer.accept(query);
+            }
+        });
     }
 
-    public void onFind(SingleCaseHook<T> hook) {
-        this.registerHooks(new FindHookWrapper<>(hook));
+    public void onFind(Consumer<Query<T>> consumer) {
+        this.registerHooks(new InteractionHook<T>() {
+            @Override
+            public void onFind(Query<T> query) {
+                consumer.accept(query);
+            }
+        });
     }
 
-    public void onDelete(SingleCaseHook<T> hook) {
-        this.registerHooks(new DeleteHookWrapper<>(hook));
+    public void onDelete(Consumer<Query<T>> consumer) {
+        this.registerHooks(new InteractionHook<T>() {
+            @Override
+            public void onDelete(Query<T> query) {
+                consumer.accept(query);
+            }
+        });
     }
 
-    public void onInject(SingleCaseHook<T> hook) {
-        this.registerHooks(new InjectHookWrapper<>(hook));
+    public void onInject(BiConsumer<T, Query<T>> consumer) {
+        this.registerHooks(new InteractionHook<T>() {
+            @Override
+            public void onInject(T instance, Query<T> query) {
+                consumer.accept(instance, query);
+            }
+        });
     }
 
     public void callSaveHooks(Query<T> query) {
-
+        this.hooks.forEach(tInteractionHook -> tInteractionHook.onSave(query));
     }
 
     public void callFindHooks(Query<T> query) {
-
+        this.hooks.forEach(tInteractionHook -> tInteractionHook.onFind(query));
     }
 
     public void callDeleteHooks(Query<T> query) {
-
+        this.hooks.forEach(tInteractionHook -> tInteractionHook.onDelete(query));
     }
 
-    public void callInjectHooks(Query<T> query) {
+    public void callInjectHooks(T instance, Query<T> query) {
 
     }
 }

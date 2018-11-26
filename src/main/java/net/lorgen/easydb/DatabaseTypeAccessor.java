@@ -1,6 +1,7 @@
 package net.lorgen.easydb;
 
 import net.lorgen.easydb.query.Query;
+import net.lorgen.easydb.response.ResponseEntity;
 
 import java.util.List;
 
@@ -10,7 +11,7 @@ import java.util.List;
  *
  * @param <T> The type this accessor handles
  */
-public interface DatabaseTypeAccessor<T extends StoredItem> {
+public interface DatabaseTypeAccessor<T> {
 
     /**
      * Executes the database setup. Automatically called, but can (using this
@@ -24,7 +25,7 @@ public interface DatabaseTypeAccessor<T extends StoredItem> {
      * @param query The {@link Query query}
      * @return The first T value to match the given parameters
      */
-    T findFirst(Query<T> query);
+    ResponseEntity<T> findFirst(Query<T> query);
 
     /**
      * Looks for all T values matching the given parameters
@@ -32,7 +33,7 @@ public interface DatabaseTypeAccessor<T extends StoredItem> {
      * @param query The {@link Query query}
      * @return All T values to match the given parameters
      */
-    List<T> findAll(Query<T> query);
+    List<ResponseEntity<T>> findAll(Query<T> query);
 
     /**
      * Saves or updates any T value matching the given parameters

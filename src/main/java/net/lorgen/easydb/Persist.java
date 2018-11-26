@@ -1,5 +1,6 @@
 package net.lorgen.easydb;
 
+import net.lorgen.easydb.field.FieldSerializer;
 import org.apache.commons.lang3.StringUtils;
 
 import java.lang.annotation.ElementType;

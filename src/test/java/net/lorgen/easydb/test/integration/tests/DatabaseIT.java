@@ -1,8 +1,8 @@
 package net.lorgen.easydb.test.integration.tests;
 
-import net.lorgen.easydb.PersistentField;
-import net.lorgen.easydb.ItemRepository;
-import net.lorgen.easydb.StoredItemProfile;
+import net.lorgen.easydb.profile.ItemProfile;
+import net.lorgen.easydb.field.PersistentField;
+import net.lorgen.easydb.SimpleRepository;
 import net.lorgen.easydb.test.TestItem;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -21,7 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 public class DatabaseIT {
 
     @Parameter(0)
-    public ItemRepository<TestItem> manager;
+    public SimpleRepository<TestItem> manager;
 
     @Parameter(1)
     public TestItem item;
@@ -39,12 +39,12 @@ public class DatabaseIT {
           .where()
           .equals("name", this.item.getUsername())
           .closeAll()
-          .findFirstSync();
+          .findFirstSync().getInstance();
 
         // Assert that we found it
         assertThat(selected).isNotNull();
 
-        StoredItemProfile<TestItem> profile = this.manager.getProfile();
+        ItemProfile<TestItem> profile = this.manager.getProfile();
         for (PersistentField<TestItem> field : profile.getFields()) {
             assertThat(field.getValue(selected)).isEqualTo(field.getValue(this.item));
         }
@@ -63,7 +63,7 @@ public class DatabaseIT {
           .where()
           .equals("name", this.item.getUsername())
           .closeAll()
-          .findFirstSync();
+          .findFirstSync().getInstance();
 
         assertThat(item.getFirstName()).isEqualTo("Updated John");
     }
@@ -81,7 +81,7 @@ public class DatabaseIT {
           .where()
           .keysAre(this.item)
           .closeAll()
-          .findFirstSync();
+          .findFirstSync().getInstance();
 
         // Shouldn't exist any more
         assertThat(selected).isNull();

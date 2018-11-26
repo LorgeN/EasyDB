@@ -7,6 +7,9 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import net.lorgen.easydb.field.FieldSerializer;
+import net.lorgen.easydb.field.FieldSerializers;
+import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.util.UtilGSON;
 import net.lorgen.easydb.util.UtilType;
 
@@ -162,7 +165,7 @@ public enum DataType implements FieldSerializer {
             // is wrong somewhere
             if (field.getTypeParameters().length != 1) {
                 throw new IllegalArgumentException("Invalid type parameters for field \"" + field.getName() +
-                  "\" in " + field.getTypeClass().getSimpleName() + "!");
+                        "\" in " + field.getDeclaringClass().getSimpleName() + "!");
             }
 
             // Don't give type params at all to avoid errors. As type parameters
@@ -204,7 +207,7 @@ public enum DataType implements FieldSerializer {
             // is wrong somewhere
             if (field.getTypeParameters().length != 1) {
                 throw new IllegalArgumentException("Invalid type parameters for field \"" + field.getName() +
-                  "\" in " + field.getTypeClass().getSimpleName() + "!");
+                        "\" in " + field.getDeclaringClass().getSimpleName() + "!");
             }
 
             // Don't give type params at all to avoid errors. As type parameters
@@ -287,7 +290,7 @@ public enum DataType implements FieldSerializer {
             Class<?>[] typeParams = field.getTypeParameters();
             if (typeParams.length != 2) {
                 throw new IllegalArgumentException("Invalid type parameters for field \"" + field.getName() +
-                  "\" in " + field.getTypeClass().getSimpleName() + "!");
+                        "\" in " + field.getDeclaringClass().getSimpleName() + "!");
             }
 
             Class keyClass = typeParams[0];
@@ -369,8 +372,8 @@ public enum DataType implements FieldSerializer {
                 return;
             }
 
-            throw new IllegalStateException("Field \"" + field.getName() + "\" in " + field.getTypeClass().getSimpleName() +
-              " has CUSTOM data type, but no custom serializer is specified!");
+            throw new IllegalStateException("Field \"" + field.getName() + "\" in " + field.getDeclaringClass().getSimpleName() +
+                    " has CUSTOM data type, but no custom serializer is specified!");
         }
     };
 
@@ -442,7 +445,16 @@ public enum DataType implements FieldSerializer {
      */
     public static DataType resolve(Field field) {
         Class<?> fieldType = field.getType();
+        return resolve(fieldType);
+    }
 
+    /**
+     * Resolves the appropriate {@link DataType type} for the given {@link Class type}.
+     *
+     * @param fieldType The type
+     * @return The appropriate {@link DataType type}, or {@code null} if no type is found.
+     */
+    public static DataType resolve(Class<?> fieldType) {
         for (DataType type : DataType.values()) {
             if (type == AUTO || !type.matches(fieldType)) {
                 continue;
@@ -456,6 +468,7 @@ public enum DataType implements FieldSerializer {
 
     @Override
     public String toString() {
+        // Simplifies the output in various debugging contexts
         return "DataType." + this.name();
     }
 }

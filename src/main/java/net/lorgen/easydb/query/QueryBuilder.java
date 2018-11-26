@@ -1,17 +1,17 @@
 package net.lorgen.easydb.query;
 
-import net.lorgen.easydb.FieldValue;
-import net.lorgen.easydb.PersistentField;
+import net.lorgen.easydb.field.FieldValue;
+import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.ItemRepository;
-import net.lorgen.easydb.StoredItem;
 import net.lorgen.easydb.query.req.QueryRequirement;
 import net.lorgen.easydb.query.req.RequirementBuilder;
+import net.lorgen.easydb.response.ResponseEntity;
 import net.lorgen.easydb.util.Callback;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class QueryBuilder<T extends StoredItem> {
+public class QueryBuilder<T> {
 
     private ItemRepository<T> manager;
     private T instance; // If we wish to pass an instance, we can
@@ -34,7 +34,7 @@ public class QueryBuilder<T extends StoredItem> {
         // them instead of querying upon the instance every time we need a value
         PersistentField<T>[] fields = this.manager.getProfile().getStoredFields();
         for (PersistentField<T> field : fields) {
-            this.set(field, field.get(object));
+            this.set(field, field.getRawFieldValue(object));
         }
 
         return this;
@@ -72,19 +72,19 @@ public class QueryBuilder<T extends StoredItem> {
 
     // Shortcut methods
 
-    public void findFirstAsync(Callback<T> callback) {
+    public void findFirstAsync(Callback<ResponseEntity<T>> callback) {
         manager.findFirstAsync(this.build(), callback);
     }
 
-    public T findFirstSync() {
+    public ResponseEntity<T> findFirstSync() {
         return manager.findFirstSync(this.build());
     }
 
-    public void findAllAsync(Callback<List<T>> callback) {
+    public void findAllAsync(Callback<List<ResponseEntity<T>>> callback) {
         manager.findAllAsync(this.build(), callback);
     }
 
-    public List<T> findAllSync() {
+    public List<ResponseEntity<T>> findAllSync() {
         return manager.findAllSync(this.build());
     }
 
@@ -118,7 +118,7 @@ public class QueryBuilder<T extends StoredItem> {
         PersistentField<T> field = this.manager.getProfile().resolveField(name);
         if (field == null) {
             throw new IllegalArgumentException("Couldn't find field \"" + name + "\" in class " +
-              this.manager.getTypeClass().getSimpleName() + "!");
+                    this.manager.getTypeClass().getSimpleName() + "!");
         }
 
         return field;
@@ -126,8 +126,8 @@ public class QueryBuilder<T extends StoredItem> {
 
     private FieldValue<T> getValue(PersistentField<T> field) {
         return Arrays.stream(this.values)
-          .filter(value -> value.getField().equals(field))
-          .findFirst().orElse(null);
+                .filter(value -> value.getField().equals(field))
+                .findFirst().orElse(null);
     }
 
     private boolean hasValue(PersistentField<T> field) {

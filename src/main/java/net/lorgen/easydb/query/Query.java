@@ -1,15 +1,14 @@
 package net.lorgen.easydb.query;
 
-import net.lorgen.easydb.FieldValue;
-import net.lorgen.easydb.PersistentField;
-import net.lorgen.easydb.StoredItem;
+import net.lorgen.easydb.field.FieldValue;
+import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.query.req.QueryRequirement;
 
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
-public class Query<T extends StoredItem> {
+public class Query<T> {
 
     private Class<T> typeClass;
     private Optional<T> instance;

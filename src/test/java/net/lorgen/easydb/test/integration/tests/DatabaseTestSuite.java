@@ -1,7 +1,7 @@
 package net.lorgen.easydb.test.integration.tests;
 
 import com.google.common.collect.Lists;
-import net.lorgen.easydb.ItemRepository;
+import net.lorgen.easydb.SimpleRepository;
 import net.lorgen.easydb.test.TestItem;
 import net.lorgen.easydb.test.integration.redis.RedisTestRepository;
 import net.lorgen.easydb.test.integration.sql.SQLTestRepository;
@@ -26,13 +26,13 @@ public class DatabaseTestSuite {
     public static final TestItem TEST_ITEM_5 = new TestItem("TestUser5", "John", "Tim", "johntim@foo.co.uk", 31);
 
     public static final TestItem[] ITEMS = {TEST_ITEM_1, TEST_ITEM_2, TEST_ITEM_3, TEST_ITEM_4, TEST_ITEM_5};
-    public static final ItemRepository<TestItem>[] MANAGERS = new ItemRepository[]{SQLTestRepository.getInstance(), RedisTestRepository.getInstance()};
+    public static final SimpleRepository<TestItem>[] MANAGERS = new SimpleRepository[]{SQLTestRepository.getInstance(), RedisTestRepository.getInstance()};
     public static final List<Object[]> CASES;
 
     static {
         List<Object[]> cases = Lists.newArrayList();
 
-        for (ItemRepository<TestItem> manager : MANAGERS) {
+        for (SimpleRepository<TestItem> manager : MANAGERS) {
             for (TestItem item : ITEMS) {
                 cases.add(new Object[]{manager, item});
             }

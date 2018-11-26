@@ -1,9 +1,10 @@
 package net.lorgen.easydb.test.integration.tests;
 
 import com.google.common.collect.Lists;
-import net.lorgen.easydb.PersistentField;
-import net.lorgen.easydb.ItemRepository;
-import net.lorgen.easydb.StoredItemProfile;
+import net.lorgen.easydb.profile.ItemProfile;
+import net.lorgen.easydb.field.PersistentField;
+import net.lorgen.easydb.SimpleRepository;
+import net.lorgen.easydb.response.ResponseEntity;
 import net.lorgen.easydb.test.TestItem;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -27,7 +28,7 @@ public class DatabaseUniqueIT {
     public static final TestItem TEST_ITEM_3 = new TestItem("TestUser", "John", "Foo", "johnfoo@foo.net", 34);
 
     @Parameter(0)
-    public ItemRepository<TestItem> manager;
+    public SimpleRepository<TestItem> manager;
 
     @Test
     public void testAInsertObject() {
@@ -60,15 +61,15 @@ public class DatabaseUniqueIT {
     }
 
     private void validateEquals(TestItem item) {
-        List<TestItem> actualList = this.manager.newQuery().where().equals("username", item.getUsername()).closeAll().findAllSync();
+        List<ResponseEntity<TestItem>> actualList = this.manager.newQuery().where().equals("username", item.getUsername()).closeAll().findAllSync();
 
         assertThat(actualList.size()).isEqualTo(1);
 
-        TestItem actual = actualList.get(0);
+        TestItem actual = actualList.get(0).getInstance();
 
         assertThat(actual).isNotNull();
 
-        StoredItemProfile<TestItem> profile = this.manager.getProfile();
+        ItemProfile<TestItem> profile = this.manager.getProfile();
         for (PersistentField<TestItem> field : profile.getFields()) {
             assertThat(field.getValue(actual)).isEqualTo(field.getValue(item));
         }
@@ -77,7 +78,7 @@ public class DatabaseUniqueIT {
     @Parameters
     public static Collection<Object[]> data() {
         List<Object[]> cases = Lists.newArrayList();
-        for (ItemRepository<TestItem> manager : DatabaseTestSuite.MANAGERS) {
+        for (SimpleRepository<TestItem> manager : DatabaseTestSuite.MANAGERS) {
             cases.add(new Object[]{manager});
         }
 

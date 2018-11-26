@@ -1,12 +1,11 @@
 package net.lorgen.easydb;
 
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
+import net.lorgen.easydb.field.PersistentField;
 
 import java.util.Arrays;
 import java.util.Objects;
 
-public class WrappedIndex<T extends StoredItem> {
+public class WrappedIndex<T> {
 
     private int id;
     private boolean unique;

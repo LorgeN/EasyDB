@@ -1,11 +1,8 @@
-package net.lorgen.easydb;
-
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
+package net.lorgen.easydb.field;
 
 import java.util.Objects;
 
-public class FieldValue<T extends StoredItem> {
+public class FieldValue<T> {
 
     private PersistentField<T> field;
     private Object value;

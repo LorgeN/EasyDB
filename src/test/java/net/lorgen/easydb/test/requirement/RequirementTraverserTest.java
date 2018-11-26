@@ -1,7 +1,7 @@
 package net.lorgen.easydb.test.requirement;
 
 import com.google.common.collect.Lists;
-import net.lorgen.easydb.PersistentField;
+import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.query.Operator;
 import net.lorgen.easydb.query.req.QueryRequirement;
 import net.lorgen.easydb.query.req.RequirementBuilder;

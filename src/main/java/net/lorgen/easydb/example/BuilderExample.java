@@ -1,10 +1,13 @@
 package net.lorgen.easydb.example;
 
+import net.lorgen.easydb.field.FieldBuilder;
 import net.lorgen.easydb.query.QueryBuilder;
 
 public class BuilderExample {
 
     static {
+        // QUERY BUILDER
+
         // I added some indents here to make it easier to visualize. If someone was to run clean-up on this it would
         // disappear though, so please don't do that
         new QueryBuilder<>(null) // This is NOT how you make a new builder, but for this example we use it
@@ -22,5 +25,11 @@ public class BuilderExample {
           .closeAll() // Complete the requirement (In SQL, this would be after the "WHERE")
           .build(); // Build the query
             // Alternatively we have a few methods for executing it directly from the builder which can be quite useful
+
+        // FIELD BUILDER
+
+        new FieldBuilder<>(0, Object.class)
+          // TODO
+          .build();
     }
 }

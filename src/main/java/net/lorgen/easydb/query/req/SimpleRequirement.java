@@ -1,9 +1,7 @@
 package net.lorgen.easydb.query.req;
 
-import net.lorgen.easydb.PersistentField;
+import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.query.Operator;
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.util.Objects;
 

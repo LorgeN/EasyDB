@@ -3,7 +3,7 @@ package net.lorgen.easydb.query.hook;
 import net.lorgen.easydb.StoredItem;
 import net.lorgen.easydb.query.Query;
 
-public interface InteractionHook<T extends StoredItem> {
+public interface InteractionHook<T> {
 
     default void onSave(Query<T> query) {
     }
@@ -14,6 +14,6 @@ public interface InteractionHook<T extends StoredItem> {
     default void onDelete(Query<T> query) {
     }
 
-    default void onInject(Query<T> query) {
+    default void onInject(T instance, Query<T> query) {
     }
 }
