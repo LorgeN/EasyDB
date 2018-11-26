@@ -10,7 +10,6 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 public class TestItem implements StoredItem {
 
-    @Persist
     @StorageKey(autoIncrement = true)
     private int id;
 
@@ -22,15 +21,13 @@ public class TestItem implements StoredItem {
     @Index(1)
     private String firstName;
 
-    @Persist
     @Index(1)
     private String lastName;
 
     @Persist(size = 32)
     private String email;
 
-    // To test it actually considering the "Persist" annotation for profiling
-    private int age;
+    private transient int age;
 
     @DeserializerConstructor({"id", "username"})
     public TestItem(int id, String username) {

@@ -55,6 +55,8 @@ public class ItemProfile<T> {
             fields.add(new PersistentField<>(index++, typeClass, field));
         }
 
+        this.fields = fields.toArray(new PersistentField[0]);
+
         this.storedFields = fields.stream()
           .filter(field -> !field.isExternalStore())
           .toArray(PersistentField[]::new);
