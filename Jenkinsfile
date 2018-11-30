@@ -1,7 +1,9 @@
 node ("master") {
-  stage ('Build') {
- 
+  stage ('Clone') {
+    deleteDir()
     git url: 'https://github.com/LorgeN/EasyDB'
+  }
+  stage ('Build') {
  
     env.JAVA_HOME="${tool 'JDK8'}"
     env.PATH="${env.JAVA_HOME}/bin:${env.PATH}"
