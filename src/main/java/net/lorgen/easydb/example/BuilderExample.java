@@ -30,7 +30,7 @@ public class BuilderExample {
         // FIELD BUILDER
 
         new ItemProfileBuilder<>(Object.class)
-          .newField()
+          .newField() // Create a new field
             .setName("Test")
             .setType(DataType.STRING)
             .setAsKey(true)
