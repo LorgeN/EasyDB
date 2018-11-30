@@ -3,7 +3,8 @@ node ("master") {
  
     git url: 'https://github.com/LorgeN/EasyDB'
  
-    withMaven() {
+    def mvn_version = 'M3'
+    withEnv( ["PATH+MAVEN=${tool mvn_version}/bin"] ) {
       bat "mvn clean install"
     }
   }
