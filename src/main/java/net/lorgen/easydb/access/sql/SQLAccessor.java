@@ -4,14 +4,14 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import net.lorgen.easydb.DataType;
 import net.lorgen.easydb.DatabaseTypeAccessor;
-import net.lorgen.easydb.field.FieldValue;
 import net.lorgen.easydb.ItemRepository;
-import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.WrappedIndex;
 import net.lorgen.easydb.connection.ConnectionRegistry;
 import net.lorgen.easydb.exception.DeleteQueryException;
 import net.lorgen.easydb.exception.FindQueryException;
 import net.lorgen.easydb.exception.SaveQueryException;
+import net.lorgen.easydb.field.FieldValue;
+import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.interact.JoinWrapper;
 import net.lorgen.easydb.query.Query;
 import net.lorgen.easydb.query.req.CombinedRequirement;
@@ -229,29 +229,39 @@ public class SQLAccessor<T> implements DatabaseTypeAccessor<T> {
 
     @Override
     public ResponseEntity<T> findFirst(Query<T> query) {
-        StringBuilder builder = new StringBuilder("SELECT * FROM ")
-          .append(this.getTableName());
-
-        if (query.getRequirement() != null) {
-            builder.append(" WHERE ").append(this.toString(query.getRequirement()));
-        }
-
-        builder.append(";");
+        String statement = this.getStatement(query);
 
         try (Connection connection = this.getConnection()) {
-            ResultSet result = connection.createStatement().executeQuery(builder.toString());
+            ResultSet result = connection.createStatement().executeQuery(statement);
             if (!result.next()) {
-                return null;
+                return new ResponseEntity<>(this.repository.getProfile());
             }
 
             return this.fromResultSet(result);
         } catch (SQLException e) {
-            throw new FindQueryException("Statement: " + builder.toString(), e, query);
+            throw new FindQueryException("Statement: " + statement, e, query);
         }
     }
 
     @Override
     public List<ResponseEntity<T>> findAll(Query<T> query) {
+        String statement = this.getStatement(query);
+
+        try (Connection connection = this.getConnection()) {
+            ResultSet result = connection.createStatement().executeQuery(statement);
+            List<ResponseEntity<T>> list = Lists.newArrayList();
+
+            while (result.next()) {
+                list.add(this.fromResultSet(result));
+            }
+
+            return list;
+        } catch (SQLException e) {
+            throw new FindQueryException("Statement: " + statement, e, query);
+        }
+    }
+
+    private String getStatement(Query<T> query) {
         StringBuilder builder = new StringBuilder("SELECT ");
 
         PersistentField<T>[] fields = this.repository.getProfile().getFields(); // Get all fields
@@ -300,19 +310,7 @@ public class SQLAccessor<T> implements DatabaseTypeAccessor<T> {
         }
 
         builder.append(";");
-
-        try (Connection connection = this.getConnection()) {
-            ResultSet result = connection.createStatement().executeQuery(builder.toString());
-            List<ResponseEntity<T>> list = Lists.newArrayList();
-
-            while (result.next()) {
-                list.add(this.fromResultSet(result));
-            }
-
-            return list;
-        } catch (SQLException e) {
-            throw new FindQueryException("Statement: " + builder.toString(), e, query);
-        }
+        return builder.toString();
     }
 
     @Override

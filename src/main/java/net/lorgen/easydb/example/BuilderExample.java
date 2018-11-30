@@ -1,6 +1,7 @@
 package net.lorgen.easydb.example;
 
-import net.lorgen.easydb.field.FieldBuilder;
+import net.lorgen.easydb.DataType;
+import net.lorgen.easydb.profile.ItemProfileBuilder;
 import net.lorgen.easydb.query.QueryBuilder;
 
 public class BuilderExample {
@@ -28,8 +29,14 @@ public class BuilderExample {
 
         // FIELD BUILDER
 
-        new FieldBuilder<>(0, Object.class)
-          // TODO
+        new ItemProfileBuilder<>(Object.class)
+          .newField()
+            .setName("Test")
+            .setType(DataType.STRING)
+            .setAsKey(true)
+            .setSize(16)
+            .buildAndAddField()
+          .fromTypeClass() // If Object now has any fields, this would add them after the "Test" key field
           .build();
     }
 }

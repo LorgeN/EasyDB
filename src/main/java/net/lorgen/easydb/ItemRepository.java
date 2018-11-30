@@ -14,6 +14,15 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * A repository containing something (Normally an object T). Each repository
+ * is responsible for managing a single table. This table may however be stored
+ * in multiple places, or not at all.
+ *
+ * @param <T> The type this repository contains. If there is no type,
+ *            and the entire repository is just built using builders,
+ *            you can simply set this to the {@link Object} class.
+ */
 public interface ItemRepository<T> {
 
     String getTableName();

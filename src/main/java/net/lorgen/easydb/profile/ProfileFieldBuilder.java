@@ -1,58 +1,32 @@
-package net.lorgen.easydb.field;
+package net.lorgen.easydb.profile;
 
 import net.lorgen.easydb.DataType;
 import net.lorgen.easydb.Index;
 import net.lorgen.easydb.ItemRepository;
 import net.lorgen.easydb.Persist;
 import net.lorgen.easydb.StorageKey;
+import net.lorgen.easydb.field.FieldBuilder;
+import net.lorgen.easydb.field.FieldSerializer;
+import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.interact.External;
 import net.lorgen.easydb.interact.Join;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
 
 import java.lang.reflect.Field;
 
 /**
- * Builder for a {@link PersistentField}. Useful when you want to simply make a "field"
- * that doesn't actually exist in any class, e. g. for keys in a map, where you store the
- * object value in the map.
+ * A delegated child of {@link FieldBuilder}, for special use in a
+ * {@link ItemProfileBuilder}.
  *
- * @param <T> The type class of the repository
+ * @param <T> The type of the profile we are building
  */
-public class FieldBuilder<T> {
+public class ProfileFieldBuilder<T> {
 
-    private int fieldIndex;
-    private Class<T> tClass;
-    private Field field;
-    private Class<?> typeClass;
-    private String name;
-    private DataType type;
-    private int size;
-    private Class<?>[] typeParams;
-    private Class<? extends FieldSerializer> serializerClass;
-    private boolean key;
-    private boolean autoIncr;
-    private boolean index;
-    private boolean uniqueIndex;
-    private boolean externalStore;
-    private String joinTable;
-    private String joinLocalField;
-    private String joinExternalField;
-    private String tableStore;
-    private boolean updateOnSave;
-    private String[] keyFields;
-    private Class<? extends ItemRepository> repository;
-    private int[] indexIds;
+    private ItemProfileBuilder<T> profileBuilder;
+    private FieldBuilder<T> fieldBuilder;
 
-    /**
-     * Constructor
-     *
-     * @param fieldIndex The index of this field
-     * @param tClass     The class of type parameter T
-     */
-    public FieldBuilder(int fieldIndex, Class<T> tClass) {
-        this.fieldIndex = fieldIndex;
-        this.tClass = tClass;
+    protected ProfileFieldBuilder(ItemProfileBuilder<T> profileBuilder, FieldBuilder<T> fieldBuilder) {
+        this.profileBuilder = profileBuilder;
+        this.fieldBuilder = fieldBuilder;
     }
 
     /**
@@ -63,28 +37,8 @@ public class FieldBuilder<T> {
      *                   to automatically configure this builder data
      * @return This
      */
-    public FieldBuilder<T> setField(Field field, boolean autoConfig) {
-        Validate.isTrue(field.getDeclaringClass().equals(this.tClass), "Field not in type class!");
-
-        this.field = field;
-        this.typeClass = field.getType();
-
-        if (!autoConfig) {
-            return this;
-        }
-
-        this.setData(field);
-        this.setIndex(field);
-        this.setJoinOn(field);
-        this.setTable(field);
-
-        StorageKey keyAnnot = field.getAnnotation(StorageKey.class);
-        if (keyAnnot == null) {
-            return this; // Not a storage key
-        }
-
-        this.key = true;
-        this.autoIncr = keyAnnot.autoIncrement();
+    public ProfileFieldBuilder<T> setField(Field field, boolean autoConfig) {
+        fieldBuilder.setField(field, autoConfig);
         return this;
     }
 
@@ -96,26 +50,8 @@ public class FieldBuilder<T> {
      * @return This
      * @throws IllegalArgumentException If no data type for the field was found
      */
-    public FieldBuilder<T> setData(Field field) {
-        Persist annotation = field.getAnnotation(Persist.class);
-        if (annotation != null) {
-            this.name = StringUtils.isEmpty(annotation.name()) ? field.getName() : annotation.name();
-            this.serializerClass = annotation.serializer();
-            this.type = annotation.type() == DataType.AUTO ? (this.serializerClass != DataType.class ? DataType.CUSTOM : DataType.resolve(field)) : annotation.type();
-            this.size = annotation.size();
-            this.typeParams = annotation.typeParams();
-        } else {
-            this.name = field.getName();
-            this.serializerClass = DataType.class;
-            this.type = DataType.resolve(field);
-            this.size = 16;
-            this.typeParams = new Class[0];
-        }
-
-        if (this.type == null) {
-            throw new IllegalArgumentException("Unable to find data type for for field \"" + field.getName() + "\"!");
-        }
-
+    public ProfileFieldBuilder<T> setData(Field field) {
+        fieldBuilder.setData(field);
         return this;
     }
 
@@ -125,8 +61,8 @@ public class FieldBuilder<T> {
      * @param name The name
      * @return This
      */
-    public FieldBuilder<T> setName(String name) {
-        this.name = name;
+    public ProfileFieldBuilder<T> setName(String name) {
+        fieldBuilder.setName(name);
         return this;
     }
 
@@ -142,13 +78,8 @@ public class FieldBuilder<T> {
      * @return This
      * @throws IllegalArgumentException If type is {@link DataType#CUSTOM}
      */
-    public FieldBuilder<T> setType(DataType type) {
-        if (type == DataType.CUSTOM) {
-            throw new IllegalArgumentException("Use method #setSerializerClass(Class) instead!");
-        }
-
-        this.serializerClass = DataType.class;
-        this.type = type;
+    public ProfileFieldBuilder<T> setType(DataType type) {
+        fieldBuilder.setType(type);
         return this;
     }
 
@@ -160,12 +91,8 @@ public class FieldBuilder<T> {
      * @param serializerClass The serializer class
      * @return This
      */
-    public FieldBuilder<T> setSerializerClass(Class<? extends FieldSerializer> serializerClass) {
-        this.serializerClass = serializerClass;
-        if (this.serializerClass != DataType.class) {
-            this.type = DataType.CUSTOM;
-        }
-
+    public ProfileFieldBuilder<T> setSerializerClass(Class<? extends FieldSerializer> serializerClass) {
+        fieldBuilder.setSerializerClass(serializerClass);
         return this;
     }
 
@@ -176,8 +103,8 @@ public class FieldBuilder<T> {
      * @param typeClass The type of this field
      * @return This
      */
-    public FieldBuilder<T> setTypeClass(Class<?> typeClass) {
-        this.typeClass = typeClass;
+    public ProfileFieldBuilder<T> setTypeClass(Class<?> typeClass) {
+        fieldBuilder.setTypeClass(typeClass);
         return this;
     }
 
@@ -188,8 +115,8 @@ public class FieldBuilder<T> {
      * @param size The size of this field
      * @return This
      */
-    public FieldBuilder<T> setSize(int size) {
-        this.size = size;
+    public ProfileFieldBuilder<T> setSize(int size) {
+        fieldBuilder.setSize(size);
         return this;
     }
 
@@ -199,8 +126,8 @@ public class FieldBuilder<T> {
      * @param typeParams The type parameters, as {@link Class classes}
      * @return This
      */
-    public FieldBuilder<T> setTypeParameters(Class<?>... typeParams) {
-        this.typeParams = typeParams;
+    public ProfileFieldBuilder<T> setTypeParameters(Class<?>... typeParams) {
+        fieldBuilder.setTypeParameters(typeParams);
         return this;
     }
 
@@ -210,8 +137,8 @@ public class FieldBuilder<T> {
      * @param value If this field should be a {@link StorageKey key}
      * @return This
      */
-    public FieldBuilder<T> setAsKey(boolean value) {
-        this.key = value;
+    public ProfileFieldBuilder<T> setAsKey(boolean value) {
+        fieldBuilder.setAsKey(value);
         return this;
     }
 
@@ -223,8 +150,8 @@ public class FieldBuilder<T> {
      * @param value If this field should auto increment
      * @return This
      */
-    public FieldBuilder<T> setAutoIncrement(boolean value) {
-        this.autoIncr = value;
+    public ProfileFieldBuilder<T> setAutoIncrement(boolean value) {
+        fieldBuilder.setAutoIncrement(value);
         return this;
     }
 
@@ -235,15 +162,8 @@ public class FieldBuilder<T> {
      * @param field The {@link Field field}
      * @return This
      */
-    public FieldBuilder<T> setIndex(Field field) {
-        Index indexAnnot = field.getAnnotation(Index.class);
-        this.index = indexAnnot != null;
-        if (!this.index) {
-            return this;
-        }
-
-        this.uniqueIndex = indexAnnot.unique();
-        this.indexIds = indexAnnot.value();
+    public ProfileFieldBuilder<T> setIndex(Field field) {
+        fieldBuilder.setIndex(field);
         return this;
     }
 
@@ -254,16 +174,8 @@ public class FieldBuilder<T> {
      * @param value If this field should be an index or not
      * @return This
      */
-    public FieldBuilder<T> setIndex(boolean value) {
-        this.index = value;
-        if (!value) {
-            return this;
-        }
-
-        if (this.indexIds.length == 0) {
-            return this.setIndexIds(-1);
-        }
-
+    public ProfileFieldBuilder<T> setIndex(boolean value) {
+        fieldBuilder.setIndex(value);
         return this;
     }
 
@@ -272,9 +184,9 @@ public class FieldBuilder<T> {
      *
      * @return This
      */
-    public FieldBuilder<T> setUniqueIndex() {
-        this.uniqueIndex = true;
-        return this.setIndex(true);
+    public ProfileFieldBuilder<T> setUniqueIndex() {
+        fieldBuilder.setUniqueIndex();
+        return this;
     }
 
     /**
@@ -283,8 +195,8 @@ public class FieldBuilder<T> {
      * @param indexIds The index IDs
      * @return This
      */
-    public FieldBuilder<T> setIndexIds(int... indexIds) {
-        this.indexIds = indexIds;
+    public ProfileFieldBuilder<T> setIndexIds(int... indexIds) {
+        fieldBuilder.setIndexIds(indexIds);
         return this;
     }
 
@@ -294,17 +206,8 @@ public class FieldBuilder<T> {
      * @param field The {@link Field field}
      * @return This
      */
-    public FieldBuilder<T> setJoinOn(Field field) {
-        Join joinData = field.getAnnotation(Join.class);
-        if (joinData == null) {
-            return this;
-        }
-
-        this.externalStore = true;
-        this.joinTable = joinData.table();
-        this.joinLocalField = joinData.localField();
-        this.joinExternalField = joinData.externalField();
-        this.repository = joinData.repository();
+    public ProfileFieldBuilder<T> setJoinOn(Field field) {
+        fieldBuilder.setJoinOn(field);
         return this;
     }
 
@@ -317,12 +220,8 @@ public class FieldBuilder<T> {
      * @param repository    The {@link ItemRepository repository} to get from
      * @return This
      */
-    public FieldBuilder<T> setJoinOn(String joinTable, String localField, String externalField, Class<? extends ItemRepository> repository) {
-        this.externalStore = true;
-        this.joinTable = joinTable;
-        this.joinLocalField = localField;
-        this.joinExternalField = externalField;
-        this.repository = repository;
+    public ProfileFieldBuilder<T> setJoinOn(String joinTable, String localField, String externalField, Class<? extends ItemRepository> repository) {
+        fieldBuilder.setJoinOn(joinTable, localField, externalField, repository);
         return this;
     }
 
@@ -333,17 +232,8 @@ public class FieldBuilder<T> {
      * @param field The {@link Field field}
      * @return This
      */
-    public FieldBuilder<T> setTable(Field field) {
-        External table = field.getAnnotation(External.class);
-        if (table == null) {
-            return this;
-        }
-
-        this.tableStore = table.table();
-        this.externalStore = !table.saveKeyLocally();
-        this.keyFields = table.keyFields();
-        this.updateOnSave = !table.immutable();
-        this.repository = table.repository();
+    public ProfileFieldBuilder<T> setTable(Field field) {
+        fieldBuilder.setTable(field);
         return this;
     }
 
@@ -353,8 +243,9 @@ public class FieldBuilder<T> {
      * @param repository The {@link Class class} of the repository managing this field
      * @return This
      */
-    public FieldBuilder<T> setTable(Class<? extends ItemRepository> repository) {
-        return this.setTable("", true, true, new String[0], repository);
+    public ProfileFieldBuilder<T> setTable(Class<? extends ItemRepository> repository) {
+        fieldBuilder.setTable(repository);
+        return this;
     }
 
     /**
@@ -363,95 +254,86 @@ public class FieldBuilder<T> {
      * @param table The table to get from
      * @return This
      */
-    public FieldBuilder<T> setTable(String table) {
-        return this.setTable(table, true, true, new String[0], ItemRepository.class);
-    }
-
-    /**
-     * Sets the table this field should be fetched from
-     *
-     * @param saveKeyLocally If the key should be saved locally, as in if we
-     *                       should take the key(s) from the object in this field
-     *                       and store them in this repository
-     * @param immutable      If this field is immutable, meaning that we shouldn't
-     *                       save it when the parent object is saved
-     * @param keyFields      The local field(s) to use as keys when finding external
-     *                       object(s). If this is used, {@link External#saveKeyLocally()}
-     *                       should be set to false. If {@link External#saveKeyLocally()}
-     *                       isn't used, and this is left empty, an attempt will be made
-     *                       to match keys in this type to that of the stored type in this
-     *                       field.
-     * @param repository     The {@link Class class} of the repository managing this field
-     * @return This
-     */
-    public FieldBuilder<T> setTable(Class<? extends ItemRepository> repository, boolean saveKeyLocally, boolean immutable, String[] keyFields) {
-        return this.setTable("", saveKeyLocally, immutable, keyFields, repository);
-    }
-
-    /**
-     * Sets the table this field should be fetched from
-     *
-     * @param table          The table to get from
-     * @param saveKeyLocally If the key should be saved locally, as in if we
-     *                       should take the key(s) from the object in this field
-     *                       and store them in this repository
-     * @param immutable      If this field is immutable, meaning that we shouldn't
-     *                       save it when the parent object is saved
-     * @param keyFields      The local field(s) to use as keys when finding external
-     *                       object(s). If this is used, {@link External#saveKeyLocally()}
-     *                       should be set to false. If {@link External#saveKeyLocally()}
-     *                       isn't used, and this is left empty, an attempt will be made
-     *                       to match keys in this type to that of the stored type in this
-     *                       field.
-     * @return This
-     */
-    public FieldBuilder<T> setTable(String table, boolean saveKeyLocally, boolean immutable, String[] keyFields) {
-        return this.setTable(table, saveKeyLocally, immutable, keyFields, ItemRepository.class);
-    }
-
-    /**
-     * Sets the table this field should be fetched from
-     *
-     * @param table          The table to get from
-     * @param saveKeyLocally If the key should be saved locally, as in if we
-     *                       should take the key(s) from the object in this field
-     *                       and store them in this repository
-     * @param immutable      If this field is immutable, meaning that we shouldn't
-     *                       save it when the parent object is saved
-     * @param keyFields      The local field(s) to use as keys when finding external
-     *                       object(s). If this is used, {@link External#saveKeyLocally()}
-     *                       should be set to false. If {@link External#saveKeyLocally()}
-     *                       isn't used, and this is left empty, an attempt will be made
-     *                       to match keys in this type to that of the stored type in this
-     *                       field.
-     * @param repository     The {@link Class class} of the repository managing this field
-     * @return This
-     */
-    public FieldBuilder<T> setTable(String table, boolean saveKeyLocally, boolean immutable, String[] keyFields, Class<? extends ItemRepository> repository) {
-        this.tableStore = table;
-        this.externalStore = !saveKeyLocally;
-        this.updateOnSave = !immutable;
-        this.keyFields = keyFields;
-        this.repository = repository;
+    public ProfileFieldBuilder<T> setTable(String table) {
+        fieldBuilder.setTable(table);
         return this;
     }
 
     /**
-     * Builds this builders data into a {@link PersistentField field}
+     * Sets the table this field should be fetched from
      *
-     * @return The built {@link PersistentField field}
+     * @param repository     The {@link Class class} of the repository managing this field
+     * @param saveKeyLocally If the key should be saved locally, as in if we
+     *                       should take the key(s) from the object in this field
+     *                       and store them in this repository
+     * @param immutable      If this field is immutable, meaning that we shouldn't
+     *                       save it when the parent object is saved
+     * @param keyFields      The local field(s) to use as keys when finding external
+     *                       object(s). If this is used, {@link External#saveKeyLocally()}
+     *                       should be set to false. If {@link External#saveKeyLocally()}
+     *                       isn't used, and this is left empty, an attempt will be made
+     *                       to match keys in this type to that of the stored type in this
+     *                       field.
+     * @return This
      */
-    public PersistentField<T> build() {
-        if (this.type == null || this.type == DataType.AUTO) {
-            if (this.typeClass == null) {
-                throw new IllegalArgumentException("Type class not defined! Can not use AUTO data type!");
-            }
+    public ProfileFieldBuilder<T> setTable(Class<? extends ItemRepository> repository, boolean saveKeyLocally, boolean immutable, String[] keyFields) {
+        fieldBuilder.setTable(repository, saveKeyLocally, immutable, keyFields);
+        return this;
+    }
 
-            this.type = DataType.resolve(this.typeClass);
-        }
+    /**
+     * Sets the table this field should be fetched from
+     *
+     * @param table          The table to get from
+     * @param saveKeyLocally If the key should be saved locally, as in if we
+     *                       should take the key(s) from the object in this field
+     *                       and store them in this repository
+     * @param immutable      If this field is immutable, meaning that we shouldn't
+     *                       save it when the parent object is saved
+     * @param keyFields      The local field(s) to use as keys when finding external
+     *                       object(s). If this is used, {@link External#saveKeyLocally()}
+     *                       should be set to false. If {@link External#saveKeyLocally()}
+     *                       isn't used, and this is left empty, an attempt will be made
+     *                       to match keys in this type to that of the stored type in this
+     *                       field.
+     * @return This
+     */
+    public ProfileFieldBuilder<T> setTable(String table, boolean saveKeyLocally, boolean immutable, String[] keyFields) {
+        fieldBuilder.setTable(table, saveKeyLocally, immutable, keyFields);
+        return this;
+    }
 
-        return new PersistentField<>(fieldIndex, tClass, field, name, type, size, typeParams, serializerClass, key,
-          autoIncr, index, uniqueIndex, externalStore, joinTable, joinLocalField, joinExternalField, tableStore,
-          updateOnSave, keyFields, repository, indexIds, typeClass);
+    /**
+     * Sets the table this field should be fetched from
+     *
+     * @param table          The table to get from
+     * @param saveKeyLocally If the key should be saved locally, as in if we
+     *                       should take the key(s) from the object in this field
+     *                       and store them in this repository
+     * @param immutable      If this field is immutable, meaning that we shouldn't
+     *                       save it when the parent object is saved
+     * @param keyFields      The local field(s) to use as keys when finding external
+     *                       object(s). If this is used, {@link External#saveKeyLocally()}
+     *                       should be set to false. If {@link External#saveKeyLocally()}
+     *                       isn't used, and this is left empty, an attempt will be made
+     *                       to match keys in this type to that of the stored type in this
+     *                       field.
+     * @param repository     The {@link Class class} of the repository managing this field
+     * @return This
+     */
+    public ProfileFieldBuilder<T> setTable(String table, boolean saveKeyLocally, boolean immutable, String[] keyFields, Class<? extends ItemRepository> repository) {
+        fieldBuilder.setTable(table, saveKeyLocally, immutable, keyFields, repository);
+        return this;
+    }
+
+    /**
+     * Builds this field from the underlying {@link FieldBuilder builder}, and adds
+     * it to the {@link ItemProfileBuilder profile}.
+     *
+     * @return The {@link ItemProfileBuilder profile builder}
+     */
+    public ItemProfileBuilder<T> buildAndAddField() {
+        this.profileBuilder.addField(this.fieldBuilder.build());
+        return this.profileBuilder;
     }
 }

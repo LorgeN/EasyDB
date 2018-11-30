@@ -8,6 +8,12 @@ import net.lorgen.easydb.response.ResponseEntity;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * The simplest of repositories, and the most basic possible implementation
+ * of {@link DatabaseRepository}.
+ *
+ * @param <T> The type
+ */
 public class SimpleRepository<T> implements DatabaseRepository<T> {
 
     private String tableName;

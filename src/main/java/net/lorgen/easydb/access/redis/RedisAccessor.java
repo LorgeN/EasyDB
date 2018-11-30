@@ -5,10 +5,14 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import net.lorgen.easydb.*;
+import net.lorgen.easydb.DatabaseType;
+import net.lorgen.easydb.DatabaseTypeAccessor;
+import net.lorgen.easydb.ItemRepository;
+import net.lorgen.easydb.Repositories;
+import net.lorgen.easydb.WrappedIndex;
+import net.lorgen.easydb.connection.ConnectionRegistry;
 import net.lorgen.easydb.field.FieldValue;
 import net.lorgen.easydb.field.PersistentField;
-import net.lorgen.easydb.connection.ConnectionRegistry;
 import net.lorgen.easydb.interact.JoinWrapper;
 import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.query.Operator;
@@ -20,8 +24,13 @@ import net.lorgen.easydb.query.traverse.RequirementTraverser;
 import net.lorgen.easydb.response.ResponseEntity;
 import redis.clients.jedis.Jedis;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Redis database type accessor
@@ -65,8 +74,8 @@ public class RedisAccessor<T> implements DatabaseTypeAccessor<T> {
         this.table = table;
         this.configuration = config;
         this.joinWrappers = Arrays.stream(repository.getProfile().getJoins())
-                .map(wrapper -> new RedisJoinWrapper(wrapper, this))
-                .toArray(RedisJoinWrapper[]::new);
+          .map(wrapper -> new RedisJoinWrapper(wrapper, this))
+          .toArray(RedisJoinWrapper[]::new);
 
         this.setUp();
     }
@@ -138,8 +147,8 @@ public class RedisAccessor<T> implements DatabaseTypeAccessor<T> {
         // First; Verify all unique fields:
         for (WrappedIndex<T> index : this.repository.getProfile().getUniqueIndices()) {
             FieldValue<T>[] values = Arrays.stream(index.getFields())
-                    .map(field -> new FieldValue<>(field, this.repository.getArrayValue(field, query.getValues())))
-                    .toArray(FieldValue[]::new);
+              .map(field -> new FieldValue<>(field, this.repository.getArrayValue(field, query.getValues())))
+              .toArray(FieldValue[]::new);
 
             List<String> keys = this.getKeys(values);
             if (keys.isEmpty()) {
@@ -220,7 +229,7 @@ public class RedisAccessor<T> implements DatabaseTypeAccessor<T> {
             Set<String> keys = jedis.keys(String.format(STORE_FORMAT, this.table, "*"));
             String key = Iterables.getFirst(keys, null);
             if (key == null) {
-                return null;
+                return new ResponseEntity<>(this.repository.getProfile());
             }
 
             return this.getObject(key);
@@ -240,7 +249,7 @@ public class RedisAccessor<T> implements DatabaseTypeAccessor<T> {
     private ResponseEntity<T> getFirst(QueryRequirement requirement) {
         List<String> keys = this.getKeys(requirement);
         if (keys.size() == 0) {
-            return null;
+            return new ResponseEntity<>(this.repository.getProfile());
         }
 
         return this.getObject(keys.get(0));
@@ -249,7 +258,7 @@ public class RedisAccessor<T> implements DatabaseTypeAccessor<T> {
     private ResponseEntity<T> getObject(String key) {
         FieldValue<T>[] values = this.getValues(key);
         if (values == null) {
-            return null;
+            return new ResponseEntity<>(this.repository.getProfile());
         }
 
         return new ResponseEntity<>(this.repository.getProfile(), values);
@@ -385,8 +394,8 @@ public class RedisAccessor<T> implements DatabaseTypeAccessor<T> {
     private final List<String> getKeys(FieldValue<T>... values) {
         ItemProfile<T> profile = this.repository.getProfile();
         PersistentField<T>[] fields = Arrays.stream(values)
-                .map(FieldValue::getField)
-                .toArray(PersistentField[]::new);
+          .map(FieldValue::getField)
+          .toArray(PersistentField[]::new);
 
         if (profile.areKeys(fields)) {
             return Lists.newArrayList(this.getKey(values));
@@ -545,8 +554,8 @@ public class RedisAccessor<T> implements DatabaseTypeAccessor<T> {
             Object localFieldValue = this.accessor.repository.getArrayValue(this.accessor.repository.getProfile().resolveField(this.getLocalField()), values);
 
             ResponseEntity<?> response = this.repository.newQuery()
-                    .where().equals(this.getRemoteField(), localFieldValue).closeAll()
-                    .findFirstSync();
+              .where().equals(this.getRemoteField(), localFieldValue).closeAll()
+              .findFirstSync();
 
             return response.getValues();
         }

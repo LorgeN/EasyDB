@@ -1,9 +1,9 @@
 package net.lorgen.easydb.response;
 
 import net.lorgen.easydb.DeserializerConstructor;
+import net.lorgen.easydb.StoredItem;
 import net.lorgen.easydb.field.FieldValue;
 import net.lorgen.easydb.field.PersistentField;
-import net.lorgen.easydb.StoredItem;
 import net.lorgen.easydb.profile.ItemProfile;
 
 import java.lang.reflect.Constructor;
@@ -11,15 +11,30 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Optional;
 
+/**
+ * A response to a query upon a repository
+ *
+ * @param <T> The type of the repository
+ */
 public class ResponseEntity<T> {
 
     private ItemProfile<T> profile; // The profile of the item
     private FieldValue<T>[] values; // The loaded values
+    // Use an optional here so that we know if we've tried to create it before,
+    // and in that case don't try again, wasting resources
     private Optional<T> createdInstance; // The created instance (If created)
+
+    public ResponseEntity(ItemProfile<T> profile) {
+        this.profile = profile;
+    }
 
     public ResponseEntity(ItemProfile<T> profile, FieldValue<T>[] values) {
         this.profile = profile;
         this.values = values;
+    }
+
+    public boolean isEmpty() {
+        return this.values == null;
     }
 
     public T getInstance() {
