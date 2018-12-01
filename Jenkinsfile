@@ -11,7 +11,7 @@ node ("master") {
   }
   stage('Publish to Snapshots') {
     configFileProvider(
-        [configFile(fileId: '8ef00a76-7b90-4537-acd3-906fb7af45a0', variable: 'MAVEN_SETTINGS')]) {
+        [configFile(fileId: '8ef00a76-7b90-4537-acd3-906fb7af45a0', replaceTokens: true, variable: 'MAVEN_SETTINGS')]) {
         bat 'mvn -s $MAVEN_SETTINGS deploy'
     }
   }
