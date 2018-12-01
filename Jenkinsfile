@@ -12,6 +12,9 @@ node ("master") {
     }
   }
   stage('Publish to Snapshots') {
-    bat 'mvn deploy'
+    configFileProvider(
+        [configFile(fileId: 'MyGlobalSettings', variable: 'MAVEN_SETTINGS')]) {
+        bat 'mvn -s $MAVEN_SETTINGS deploy'
+    }
   }
 }
