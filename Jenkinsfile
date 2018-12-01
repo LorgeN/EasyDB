@@ -4,12 +4,15 @@ node ("master") {
     git url: 'https://github.com/LorgeN/EasyDB'
   }
   stage ('Build') {
- 
-    env.JAVA_HOME="${tool 'JDK8'}"
-    env.PATH="${env.JAVA_HOME}/bin:${env.PATH}"
-    def mvn_version = 'M3'
-    withEnv( ["PATH+MAVEN=${tool mvn_version}/bin"] ) {
-      bat "mvn clean install"
+    env.PATH="${tool 'JDK8'}/bin:${env.PATH}"
+    env.PATH="${tool 'M3'}/bin:${env.PATH}"
+    
+    bat "mvn clean install"
+  }
+  stage('Publish to Snapshots') {
+    configFileProvider(
+        [configFile(fileId: '8ef00a76-7b90-4537-acd3-906fb7af45a0', replaceTokens: true, variable: 'MAVEN_SETTINGS')]) {
+      bat "mvn -s \"${MAVEN_SETTINGS}\" deploy"
     }
   }
 }
