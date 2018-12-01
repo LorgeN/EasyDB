@@ -1,5 +1,6 @@
-package net.lorgen.easydb;
+package net.lorgen.easydb.access;
 
+import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.query.Query;
 import net.lorgen.easydb.response.ResponseEntity;
 
@@ -12,6 +13,8 @@ import java.util.List;
  * @param <T> The type this accessor handles
  */
 public interface DatabaseTypeAccessor<T> {
+
+    ItemProfile<T> getProfile();
 
     /**
      * Executes the database setup. Automatically called, but can (using this

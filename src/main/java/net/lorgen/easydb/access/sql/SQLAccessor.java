@@ -3,16 +3,19 @@ package net.lorgen.easydb.access.sql;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import net.lorgen.easydb.DataType;
-import net.lorgen.easydb.DatabaseTypeAccessor;
 import net.lorgen.easydb.ItemRepository;
 import net.lorgen.easydb.WrappedIndex;
+import net.lorgen.easydb.access.ListenableTypeAccessor;
 import net.lorgen.easydb.connection.ConnectionRegistry;
 import net.lorgen.easydb.exception.DeleteQueryException;
+import net.lorgen.easydb.exception.DropException;
 import net.lorgen.easydb.exception.FindQueryException;
 import net.lorgen.easydb.exception.SaveQueryException;
+import net.lorgen.easydb.exception.SetUpException;
 import net.lorgen.easydb.field.FieldValue;
 import net.lorgen.easydb.field.PersistentField;
-import net.lorgen.easydb.interact.JoinWrapper;
+import net.lorgen.easydb.interact.join.JoinWrapper;
+import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.query.Query;
 import net.lorgen.easydb.query.req.CombinedRequirement;
 import net.lorgen.easydb.query.req.QueryRequirement;
@@ -35,7 +38,7 @@ import java.util.Map.Entry;
  *
  * @param <T> The type this accessor handles
  */
-public class SQLAccessor<T> implements DatabaseTypeAccessor<T> {
+public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
 
     private final ItemRepository<T> repository;
     private final String table;
@@ -180,12 +183,17 @@ public class SQLAccessor<T> implements DatabaseTypeAccessor<T> {
 
             statement.executeBatch();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new SetUpException(e);
         }
     }
 
     @Override
-    public void setUp() {
+    public ItemProfile<T> getProfile() {
+        return this.repository.getProfile();
+    }
+
+    @Override
+    public void setUpInternal() {
         this.createTable();
     }
 
@@ -228,7 +236,7 @@ public class SQLAccessor<T> implements DatabaseTypeAccessor<T> {
     }
 
     @Override
-    public ResponseEntity<T> findFirst(Query<T> query) {
+    public ResponseEntity<T> findFirstInternal(Query<T> query) {
         String statement = this.getStatement(query);
 
         try (Connection connection = this.getConnection()) {
@@ -244,7 +252,7 @@ public class SQLAccessor<T> implements DatabaseTypeAccessor<T> {
     }
 
     @Override
-    public List<ResponseEntity<T>> findAll(Query<T> query) {
+    public List<ResponseEntity<T>> findAllInternal(Query<T> query) {
         String statement = this.getStatement(query);
 
         try (Connection connection = this.getConnection()) {
@@ -314,7 +322,7 @@ public class SQLAccessor<T> implements DatabaseTypeAccessor<T> {
     }
 
     @Override
-    public void saveOrUpdate(Query<T> query) {
+    public void saveOrUpdateInternal(Query<T> query) {
         // This is now simply an "UPDATE" statement
         if (query.getRequirement() != null) {
             StringBuilder builder = new StringBuilder("UPDATE ")
@@ -419,7 +427,7 @@ public class SQLAccessor<T> implements DatabaseTypeAccessor<T> {
     }
 
     @Override
-    public void delete(Query<T> query) {
+    public void deleteInternal(Query<T> query) {
         // Check if there is a requirement. If there is not, we use the "TRUNCATE" command instead
         if (query.getRequirement() == null) {
             String statement = "TRUNCATE " + this.getTableName() + ";";
@@ -447,11 +455,11 @@ public class SQLAccessor<T> implements DatabaseTypeAccessor<T> {
     }
 
     @Override
-    public void drop() {
+    public void dropInternal() {
         try (Connection connection = this.getConnection()) {
             connection.createStatement().execute("DROP TABLE " + this.getTableName());
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DropException(e);
         }
     }
 
@@ -471,13 +479,16 @@ public class SQLAccessor<T> implements DatabaseTypeAccessor<T> {
             FieldValue<T>[] values = new FieldValue[fields.length];
             for (int i = 0; i < fields.length; i++) {
                 PersistentField<T> field = fields[i];
+                if (field.getExternalTable() != null) {
+                    values[i] = new FieldValue<>(field); // Empty value for now
+                    continue;
+                }
+
                 Object value = set.getObject(field.getName());
-                /*
                 if (field.getType().returnsPrimitive(this.repository, field)) {
                     values[i] = new FieldValue<>(field, value);
                     continue;
                 }
-                */
 
                 values[i] = new FieldValue<>(field, field.getType().fromString(this.repository, field, (String) value));
             }

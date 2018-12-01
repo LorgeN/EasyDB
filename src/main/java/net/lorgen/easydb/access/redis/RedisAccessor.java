@@ -6,14 +6,19 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import net.lorgen.easydb.DatabaseType;
-import net.lorgen.easydb.DatabaseTypeAccessor;
 import net.lorgen.easydb.ItemRepository;
 import net.lorgen.easydb.Repositories;
 import net.lorgen.easydb.WrappedIndex;
+import net.lorgen.easydb.access.ListenableTypeAccessor;
 import net.lorgen.easydb.connection.ConnectionRegistry;
+import net.lorgen.easydb.exception.DeleteQueryException;
+import net.lorgen.easydb.exception.DropException;
+import net.lorgen.easydb.exception.FindQueryException;
+import net.lorgen.easydb.exception.SaveQueryException;
+import net.lorgen.easydb.exception.SetUpException;
 import net.lorgen.easydb.field.FieldValue;
 import net.lorgen.easydb.field.PersistentField;
-import net.lorgen.easydb.interact.JoinWrapper;
+import net.lorgen.easydb.interact.join.JoinWrapper;
 import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.query.Operator;
 import net.lorgen.easydb.query.Query;
@@ -37,7 +42,7 @@ import java.util.Set;
  *
  * @param <T> The type this accessor handles
  */
-public class RedisAccessor<T> implements DatabaseTypeAccessor<T> {
+public class RedisAccessor<T> extends ListenableTypeAccessor<T> {
 
     /**
      * The format of the key in the Redis database
@@ -85,7 +90,12 @@ public class RedisAccessor<T> implements DatabaseTypeAccessor<T> {
     }
 
     @Override
-    public void setUp() {
+    public ItemProfile<T> getProfile() {
+        return this.repository.getProfile();
+    }
+
+    @Override
+    public void setUpInternal() {
         if (this.repository.getProfile().getAutoIncrementField() == null) {
             return;
         }
@@ -98,78 +108,92 @@ public class RedisAccessor<T> implements DatabaseTypeAccessor<T> {
             }
 
             jedis.set(key, "0");
+        } catch (Throwable t) {
+            throw new SetUpException(t);
         }
     }
 
     @Override
-    public ResponseEntity<T> findFirst(Query<T> query) {
-        if (query.getRequirement() == null) {
-            return this.getFirst();
-        }
+    public ResponseEntity<T> findFirstInternal(Query<T> query) {
+        try {
+            if (query.getRequirement() == null) {
+                return this.getFirst();
+            }
 
-        return this.getFirst(query.getRequirement());
+            return this.getFirst(query.getRequirement());
+        } catch (Throwable t) {
+            throw new FindQueryException(t, query);
+        }
     }
 
     @Override
-    public List<ResponseEntity<T>> findAll(Query<T> query) {
-        if (query.getRequirement() == null) {
-            return this.getAll();
-        }
+    public List<ResponseEntity<T>> findAllInternal(Query<T> query) {
+        try {
+            if (query.getRequirement() == null) {
+                return this.getAll();
+            }
 
-        return this.getAll(query.getRequirement());
+            return this.getAll(query.getRequirement());
+        } catch (Throwable t) {
+            throw new FindQueryException(t, query);
+        }
     }
 
     @Override
-    public void saveOrUpdate(Query<T> query) {
-        // In this case we first have to find all the keys we wish to modify. This
-        // means we have to find all matching keys.
-        if (query.getRequirement() != null) {
-            FieldValue<T>[] newValues = query.getValues();
-            List<String> keys = this.getKeys(query.getRequirement());
+    public void saveOrUpdateInternal(Query<T> query) {
+        try {
+            // In this case we first have to find all the keys we wish to modify. This
+            // means we have to find all matching keys.
+            if (query.getRequirement() != null) {
+                FieldValue<T>[] newValues = query.getValues();
+                List<String> keys = this.getKeys(query.getRequirement());
 
-            for (String key : keys) {
-                FieldValue<T>[] currentValues = this.getValues(key);
-                for (FieldValue<T> newValue : newValues) {
-                    this.repository.updateArrayValue(newValue.getField(), newValue.getValue(), currentValues);
+                for (String key : keys) {
+                    FieldValue<T>[] currentValues = this.getValues(key);
+                    for (FieldValue<T> newValue : newValues) {
+                        this.repository.updateArrayValue(newValue.getField(), newValue.getValue(), currentValues);
+                    }
+
+                    // Current values have been updated
+                    this.insertIntoHash(key, currentValues);
                 }
 
-                // Current values have been updated
-                this.insertIntoHash(key, currentValues);
+                // Query completed
+                return;
             }
 
-            // Query completed
-            return;
+            String thisKey = this.getKey(query.getValues());
+
+            // We now have a new T instance to save
+            // First; Verify all unique fields:
+            for (WrappedIndex<T> index : this.repository.getProfile().getUniqueIndices()) {
+                FieldValue<T>[] values = Arrays.stream(index.getFields())
+                  .map(field -> new FieldValue<>(field, this.repository.getArrayValue(field, query.getValues())))
+                  .toArray(FieldValue[]::new);
+
+                List<String> keys = this.getKeys(values);
+                if (keys.isEmpty()) {
+                    continue;
+                }
+
+                // This would mean we are working with the same object,
+                // and we of course need to be able to update it
+                if (keys.size() == 1 && keys.get(0).equals(thisKey)) {
+                    continue;
+                }
+
+                throw new IllegalArgumentException("Unique index \"" + index + "\" is same as another entry!");
+            }
+
+            // Then; Save it
+            this.insertIntoHash(query.getObjectInstance(), query.getValues());
+        } catch (Throwable t) {
+            throw new SaveQueryException(t, query);
         }
-
-        String thisKey = this.getKey(query.getValues());
-
-        // We now have a new T instance to save
-        // First; Verify all unique fields:
-        for (WrappedIndex<T> index : this.repository.getProfile().getUniqueIndices()) {
-            FieldValue<T>[] values = Arrays.stream(index.getFields())
-              .map(field -> new FieldValue<>(field, this.repository.getArrayValue(field, query.getValues())))
-              .toArray(FieldValue[]::new);
-
-            List<String> keys = this.getKeys(values);
-            if (keys.isEmpty()) {
-                continue;
-            }
-
-            // This would mean we are working with the same object,
-            // and we of course need to be able to update it
-            if (keys.size() == 1 && keys.get(0).equals(thisKey)) {
-                continue;
-            }
-
-            throw new IllegalArgumentException("Unique index \"" + index + "\" is same as another entry!");
-        }
-
-        // Then; Save it
-        this.insertIntoHash(query.getObjectInstance(), query.getValues());
     }
 
     @Override
-    public void delete(Query<T> query) {
+    public void deleteInternal(Query<T> query) {
         if (query.getRequirement() == null) {
             this.drop();
             return;
@@ -179,13 +203,15 @@ public class RedisAccessor<T> implements DatabaseTypeAccessor<T> {
 
         try (Jedis jedis = this.getResource()) {
             jedis.del(keys);
+        } catch (Throwable t) {
+            throw new DeleteQueryException(t, query);
         }
 
         this.removeFromIndices(keys);
     }
 
     @Override
-    public void drop() {
+    public void dropInternal() {
         try (Jedis jedis = this.getResource()) {
             Set<String> keys = jedis.keys(String.format(STORE_FORMAT, this.table, "*"));
             if (!keys.isEmpty()) {
@@ -199,6 +225,8 @@ public class RedisAccessor<T> implements DatabaseTypeAccessor<T> {
             if (this.repository.getProfile().getAutoIncrementField() != null) {
                 jedis.del(String.format(AUTO_INCREMENT_FORMAT, this.table));
             }
+        } catch (Throwable t) {
+            throw new DropException(t);
         }
     }
 
