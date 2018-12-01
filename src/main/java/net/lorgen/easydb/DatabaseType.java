@@ -1,11 +1,12 @@
 package net.lorgen.easydb;
 
+import net.lorgen.easydb.access.DatabaseTypeAccessor;
 import net.lorgen.easydb.access.redis.RedisAccessor;
 import net.lorgen.easydb.access.redis.RedisConfiguration;
 import net.lorgen.easydb.access.sql.SQLAccessor;
 import net.lorgen.easydb.access.sql.SQLConfiguration;
-import net.lorgen.easydb.connection.configuration.ConnectionConfiguration;
 import net.lorgen.easydb.connection.ConnectionRegistry;
+import net.lorgen.easydb.connection.configuration.ConnectionConfiguration;
 
 public enum DatabaseType {
     SQL {
@@ -57,5 +58,21 @@ public enum DatabaseType {
         }
 
         return this.newAccessor(configuration, manager, tableName);
+    }
+
+    public static <T extends DatabaseTypeAccessor> DatabaseType fromAccessor(Class<T> accessor) {
+        for (DatabaseType value : DatabaseType.values()) {
+            if (!value.isAccessor(accessor)) {
+                continue;
+            }
+
+            return value;
+        }
+
+        return null;
+    }
+
+    public static <T> DatabaseType fromAccessor(DatabaseTypeAccessor<T> accessor) {
+        return fromAccessor(accessor.getClass());
     }
 }

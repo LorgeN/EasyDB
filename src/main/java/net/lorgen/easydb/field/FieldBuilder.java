@@ -5,8 +5,8 @@ import net.lorgen.easydb.Index;
 import net.lorgen.easydb.ItemRepository;
 import net.lorgen.easydb.Persist;
 import net.lorgen.easydb.StorageKey;
-import net.lorgen.easydb.interact.External;
-import net.lorgen.easydb.interact.Join;
+import net.lorgen.easydb.interact.external.External;
+import net.lorgen.easydb.interact.join.Join;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
@@ -53,6 +53,24 @@ public class FieldBuilder<T> {
     public FieldBuilder(int fieldIndex, Class<T> tClass) {
         this.fieldIndex = fieldIndex;
         this.tClass = tClass;
+    }
+
+    /**
+     * Copies the key attributes (type class, name, size, type parameters, type,
+     * serializer class) from the given {@link PersistentField field} to this
+     * builder.
+     *
+     * @param field The {@link PersistentField field}
+     * @return This
+     */
+    public FieldBuilder<T> copyAttributes(PersistentField<?> field) {
+        this.typeClass = field.getTypeClass();
+        this.name = field.getName();
+        this.size = field.getSize();
+        this.typeParams = field.getTypeParameters();
+        this.type = field.getType();
+        this.serializerClass = field.getSerializerClass();
+        return this;
     }
 
     /**

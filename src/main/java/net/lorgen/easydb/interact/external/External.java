@@ -1,4 +1,4 @@
-package net.lorgen.easydb.interact;
+package net.lorgen.easydb.interact.external;
 
 import net.lorgen.easydb.ItemRepository;
 

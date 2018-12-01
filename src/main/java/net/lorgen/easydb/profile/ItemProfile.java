@@ -2,10 +2,9 @@ package net.lorgen.easydb.profile;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import net.lorgen.easydb.Persist;
 import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.WrappedIndex;
-import net.lorgen.easydb.interact.JoinWrapper;
+import net.lorgen.easydb.interact.join.JoinWrapper;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -75,7 +74,7 @@ public class ItemProfile<T> {
             // You could store without a key, but then we'd have to do some special handling, at least in Redis. It
             // might be useful for just a simple lists where we only operate on the entire list but that is not very
             // scalable.
-            throw new IllegalStateException("No storage keys! Please annotate fields using StorageKey to mark them as keys!");
+            throw new IllegalArgumentException("No storage keys! Please annotate fields using StorageKey to mark them as keys!");
         }
 
         this.fields = fields.stream()

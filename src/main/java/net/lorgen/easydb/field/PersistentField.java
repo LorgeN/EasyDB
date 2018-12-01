@@ -5,8 +5,8 @@ import net.lorgen.easydb.Index;
 import net.lorgen.easydb.ItemRepository;
 import net.lorgen.easydb.Persist;
 import net.lorgen.easydb.StorageKey;
-import net.lorgen.easydb.interact.External;
-import net.lorgen.easydb.interact.Join;
+import net.lorgen.easydb.interact.external.External;
+import net.lorgen.easydb.interact.join.Join;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
@@ -271,10 +271,6 @@ public class PersistentField<T> {
 
     public boolean isUpdateOnSave() {
         return updateOnSave;
-    }
-
-    public boolean isKey() {
-        return key;
     }
 
     public boolean isAutoIncr() {

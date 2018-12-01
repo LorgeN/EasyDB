@@ -9,11 +9,16 @@ import net.lorgen.easydb.access.event.AccessorRespondEvent;
 import net.lorgen.easydb.access.event.AccessorSaveEvent;
 import net.lorgen.easydb.access.event.AccessorSetUpEvent;
 import net.lorgen.easydb.event.EventManager;
+import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.interact.external.External;
+import net.lorgen.easydb.interact.external.ExternalCollectionListener;
+import net.lorgen.easydb.interact.external.ExternalFieldListener;
 import net.lorgen.easydb.query.Query;
 import net.lorgen.easydb.response.ResponseEntity;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A {@link DatabaseTypeAccessor} with listenable events using the {@link EventManager}.
@@ -46,7 +51,24 @@ public abstract class ListenableTypeAccessor<T> implements DatabaseTypeAccessor<
     }
 
     private void setUpExternalFields() {
+        for (PersistentField<T> field : this.getProfile().getFields()) {
+            if (field.getExternalTable() == null) {
+                continue;
+            }
 
+            Class<?> typeClass = field.getTypeClass();
+            if (Map.class.isAssignableFrom(typeClass)) {
+                // TODO: Handle this
+                continue;
+            }
+
+            if (Collection.class.isAssignableFrom(typeClass)) {
+                this.getEventManager().registerListener(new ExternalCollectionListener<>(this, field));
+                continue;
+            }
+
+            this.getEventManager().registerListener(new ExternalFieldListener<>(this, field));
+        }
     }
 
     protected abstract void setUpInternal();

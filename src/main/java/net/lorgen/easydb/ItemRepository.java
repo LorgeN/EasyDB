@@ -9,8 +9,6 @@ import net.lorgen.easydb.response.ResponseEntity;
 import net.lorgen.easydb.util.Callback;
 import net.lorgen.easydb.util.concurrency.UtilConcurrency;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -114,65 +112,6 @@ public interface ItemRepository<T> {
     }
 
     void deleteSync(Query<T> query);
-
-    default T fromValues(FieldValue<T>[] values) {
-        try {
-            Constructor<T>[] constructors = (Constructor<T>[]) this.getTypeClass().getDeclaredConstructors();
-            Constructor<T> noArgs = null;
-            Constructor<T> annotated = null;
-
-            for (Constructor<T> constructor : constructors) {
-                if (constructor.getParameterCount() == 0) {
-                    noArgs = constructor;
-                    continue;
-                }
-
-                if (!constructor.isAnnotationPresent(DeserializerConstructor.class)) {
-                    continue;
-                }
-
-                annotated = constructor;
-            }
-
-            T instance;
-            if (annotated != null) {
-                PersistentField<T>[] fields = Arrays.stream(annotated.getAnnotation(DeserializerConstructor.class).value())
-                  .map(name -> this.getProfile().resolveField(name))
-                  .toArray(PersistentField[]::new);
-
-                Object[] fieldValues = new Object[fields.length];
-                for (int i = 0; i < fields.length; i++) {
-                    fieldValues[i] = this.getArrayValue(fields[i], values);
-                }
-
-                instance = annotated.newInstance(fieldValues);
-            } else if (noArgs != null) {
-                instance = noArgs.newInstance();
-            } else {
-                throw new RuntimeException("Missing constructor for StoredItem class " + this.getTypeClass().getSimpleName() + "!");
-            }
-
-            this.injectArrayValues(instance, values);
-            return instance;
-        } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    default void injectArrayValues(T instance, FieldValue<T>[] values) {
-        if (instance instanceof StoredItem) {
-            ((StoredItem) instance).preInject();
-        }
-
-        for (FieldValue<T> value : values) {
-            value.getField().set(instance, value.getValue());
-        }
-
-        if (instance instanceof StoredItem) {
-            ((StoredItem) instance).postInject();
-        }
-    }
 
     default void updateArrayValue(PersistentField<T> field, Object value, FieldValue<T>[] values) {
         Arrays.stream(values)

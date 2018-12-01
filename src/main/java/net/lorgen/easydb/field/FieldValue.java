@@ -7,6 +7,10 @@ public class FieldValue<T> {
     private PersistentField<T> field;
     private Object value;
 
+    public FieldValue(PersistentField<T> field) {
+        this.field = field;
+    }
+
     public FieldValue(PersistentField<T> field, Object value) {
         this.field = field;
         if (!this.field.getType().matches(value.getClass())) {
@@ -18,6 +22,10 @@ public class FieldValue<T> {
 
     public PersistentField<T> getField() {
         return field;
+    }
+
+    public boolean isEmpty() {
+        return this.value == null;
     }
 
     public Object getValue() {

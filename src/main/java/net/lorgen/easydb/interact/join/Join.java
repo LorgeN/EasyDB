@@ -1,4 +1,4 @@
-package net.lorgen.easydb.interact;
+package net.lorgen.easydb.interact.join;
 
 import net.lorgen.easydb.ItemRepository;
 

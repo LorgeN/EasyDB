@@ -8,8 +8,8 @@ import net.lorgen.easydb.StorageKey;
 import net.lorgen.easydb.field.FieldBuilder;
 import net.lorgen.easydb.field.FieldSerializer;
 import net.lorgen.easydb.field.PersistentField;
-import net.lorgen.easydb.interact.External;
-import net.lorgen.easydb.interact.Join;
+import net.lorgen.easydb.interact.external.External;
+import net.lorgen.easydb.interact.join.Join;
 
 import java.lang.reflect.Field;
 
@@ -27,6 +27,19 @@ public class ProfileFieldBuilder<T> {
     protected ProfileFieldBuilder(ItemProfileBuilder<T> profileBuilder, FieldBuilder<T> fieldBuilder) {
         this.profileBuilder = profileBuilder;
         this.fieldBuilder = fieldBuilder;
+    }
+
+    /**
+     * Copies the key attributes (type class, name, size, type parameters, type,
+     * serializer class) from the given {@link PersistentField field} to this
+     * builder.
+     *
+     * @param field The {@link PersistentField field}
+     * @return This
+     */
+    public ProfileFieldBuilder<T> copyAttributes(PersistentField<?> field) {
+        fieldBuilder.copyAttributes(field);
+        return this;
     }
 
     /**

@@ -5,7 +5,7 @@ import com.google.common.collect.Maps;
 import net.lorgen.easydb.WrappedIndex;
 import net.lorgen.easydb.field.FieldBuilder;
 import net.lorgen.easydb.field.PersistentField;
-import net.lorgen.easydb.interact.JoinWrapper;
+import net.lorgen.easydb.interact.join.JoinWrapper;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;

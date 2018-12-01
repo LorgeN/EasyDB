@@ -95,6 +95,11 @@ public class RedisAccessor<T> extends ListenableTypeAccessor<T> {
     }
 
     @Override
+    public boolean isSearchable(PersistentField<T> field) {
+        return field.isIndex() || field.isStorageKey();
+    }
+
+    @Override
     public void setUpInternal() {
         if (this.repository.getProfile().getAutoIncrementField() == null) {
             return;

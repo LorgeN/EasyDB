@@ -193,6 +193,11 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
     }
 
     @Override
+    public boolean isSearchable(PersistentField<T> field) {
+        return !field.isExternalStore();
+    }
+
+    @Override
     public void setUpInternal() {
         this.createTable();
     }

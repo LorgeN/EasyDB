@@ -33,6 +33,16 @@ public class ResponseEntity<T> {
         this.values = values;
     }
 
+    public FieldValue<T>[] getValues() {
+        return values;
+    }
+
+    public FieldValue<T> getValue(String fieldName) {
+        return Arrays.stream(this.getValues())
+          .filter(value -> value.getField().getName().equalsIgnoreCase(fieldName))
+          .findFirst().orElse(null);
+    }
+
     public boolean isEmpty() {
         return this.values == null;
     }
@@ -88,16 +98,6 @@ public class ResponseEntity<T> {
             this.createdInstance = Optional.empty();
             return null;
         }
-    }
-
-    public FieldValue<T>[] getValues() {
-        return values;
-    }
-
-    public FieldValue<T> getValue(String fieldName) {
-        return Arrays.stream(this.getValues())
-          .filter(value -> value.getField().getName().equalsIgnoreCase(fieldName))
-          .findFirst().orElse(null);
     }
 
     // Internals

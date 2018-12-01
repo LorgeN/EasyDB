@@ -1,5 +1,6 @@
 package net.lorgen.easydb;
 
+import net.lorgen.easydb.access.DatabaseTypeAccessor;
 import net.lorgen.easydb.connection.configuration.ConnectionConfiguration;
 import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.query.Query;

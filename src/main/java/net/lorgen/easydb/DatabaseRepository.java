@@ -1,5 +1,7 @@
 package net.lorgen.easydb;
 
+import net.lorgen.easydb.access.DatabaseTypeAccessor;
+
 /**
  * A special case of @{@link ItemRepository}, where this repository
  * stores the data in a (and only one) database.
