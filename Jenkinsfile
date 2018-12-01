@@ -11,7 +11,7 @@ node ("master") {
       bat "mvn clean install"
     }
   }
-  stage('Publish') {
+  stage('Publish to Snapshots') {
     bat 'mvn deploy'
   }
 }
