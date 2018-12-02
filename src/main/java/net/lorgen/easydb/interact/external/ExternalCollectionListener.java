@@ -2,7 +2,6 @@ package net.lorgen.easydb.interact.external;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
 import net.lorgen.easydb.DatabaseType;
 import net.lorgen.easydb.ItemRepository;
@@ -17,10 +16,13 @@ import net.lorgen.easydb.field.FieldValue;
 import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.profile.ItemProfileBuilder;
+import net.lorgen.easydb.query.Query;
+import net.lorgen.easydb.query.QueryBuilder;
 import net.lorgen.easydb.query.req.RequirementBuilder;
 import net.lorgen.easydb.response.ResponseEntity;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -29,12 +31,15 @@ import java.util.Set;
 
 public class ExternalCollectionListener<T> implements Listener {
 
+    private static final String INDEX_FIELD = "collection_index";
+
     private PersistentField<T> field;
 
     // We use one of these
     private PersistentField<T>[] keys;
     private Map<String, String> mappedFields;
 
+    private boolean addedKeys;
     private ItemRepository<?> repository;
 
     public ExternalCollectionListener(ListenableTypeAccessor<T> accessor, PersistentField<T> field) {
@@ -53,12 +58,13 @@ public class ExternalCollectionListener<T> implements Listener {
                 builder.newField().copyAttributes(key).setAsKey(true).buildAndAddField();
             }
 
-            builder.newField().setName("collection_index").setTypeClass(Integer.class).setAsKey(true).buildAndAddField()
+            builder.newField().setName(INDEX_FIELD).setTypeClass(Integer.class).setAsKey(true).buildAndAddField()
               .fromTypeClass(); // Add the type class
 
             ItemProfile profile = builder.build();
             this.repository = Repositories.createRepository(null, type, field.getExternalTable(), field.getTypeClass(), field.getRepository(), profile);
             this.keys = accessor.getProfile().getKeys(); // Use these keys so we get the correct objects
+            this.addedKeys = true;
         }
 
         if (this.repository == null) {
@@ -150,15 +156,62 @@ public class ExternalCollectionListener<T> implements Listener {
 
     @EventHandler
     public void onSave(AccessorSaveEvent event) {
-        // TODO
+        if (!this.field.isUpdateOnSave()) {
+            return;
+        }
+
+        Query<T> baseQuery = (Query<T>) event.getQuery();
+        this.deleteAll(baseQuery); // I know, slow, but really the only way to handle it
+
+        Collection<?> collection = (Collection<?>) baseQuery.getValue(this.field).getValue();
+        Iterator<?> iterator = collection.iterator();
+        for (int i = 0; i < collection.size(); i++) {
+            Object value = iterator.next();
+            QueryBuilder builder = this.repository.newQuery();
+
+            if (this.addedKeys) {
+                for (PersistentField<T> key : this.keys) {
+                    builder.set(key.getName(), baseQuery.getValue(key.getName()));
+                }
+
+                builder.set(INDEX_FIELD, i);
+            }
+
+            builder.set(value).saveSync();
+        }
     }
 
     @EventHandler
     public void onDelete(AccessorDeleteEvent event) {
-        // TODO
+        if (!this.field.isUpdateOnSave()) {
+            return;
+        }
+
+        Query<T> baseQuery = (Query<T>) event.getQuery();
+        this.deleteAll(baseQuery);
     }
 
     // Internals
+
+    private void deleteAll(Query<T> baseQuery) {
+        if (this.addedKeys) {
+            RequirementBuilder builder = this.repository.newQuery().where();
+            for (PersistentField<T> key : this.keys) {
+                builder.andEquals(key.getName(), baseQuery.getValue(key.getName()));
+            }
+
+            builder.closeAll().deleteSync();
+            return;
+        }
+
+        // Hope to god that most people don't use this
+        Collection<?> collection = (Collection<?>) baseQuery.getValue(this.field).getValue();
+        Iterator<?> iterator = collection.iterator();
+        for (int i = 0; i < collection.size(); i++) {
+            Object value = iterator.next();
+            this.repository.newQuery().where().keysAre(value).closeAll().deleteSync();
+        }
+    }
 
     private Collection<?> newInstance() {
         Class<? extends Collection> typeClass = (Class<? extends Collection>) this.field.getTypeClass();

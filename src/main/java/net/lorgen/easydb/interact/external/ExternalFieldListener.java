@@ -1,5 +1,6 @@
 package net.lorgen.easydb.interact.external;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import net.lorgen.easydb.DatabaseType;
 import net.lorgen.easydb.ItemRepository;
@@ -14,6 +15,8 @@ import net.lorgen.easydb.field.FieldValue;
 import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.profile.ItemProfileBuilder;
+import net.lorgen.easydb.query.Query;
+import net.lorgen.easydb.query.QueryBuilder;
 import net.lorgen.easydb.query.req.RequirementBuilder;
 import net.lorgen.easydb.response.ResponseEntity;
 
@@ -28,6 +31,7 @@ public class ExternalFieldListener<T> implements Listener {
     private PersistentField<T>[] keys;
     private Map<String, String> mappedFields;
 
+    private boolean addedKeys;
     private ItemRepository<?> repository;
 
     public ExternalFieldListener(ListenableTypeAccessor<T> accessor, PersistentField<T> field) {
@@ -49,6 +53,8 @@ public class ExternalFieldListener<T> implements Listener {
             builder.fromTypeClass(); // Add the type class
             this.repository = Repositories.createRepository(null, type, field.getExternalTable(), field.getTypeClass(), field.getRepository(), builder.build());
             this.keys = accessor.getProfile().getKeys();
+
+            this.addedKeys = true;
         }
 
         if (this.repository == null) {
@@ -134,11 +140,39 @@ public class ExternalFieldListener<T> implements Listener {
 
     @EventHandler
     public void onSave(AccessorSaveEvent event) {
-        // TODO
+        if (!this.field.isUpdateOnSave()) {
+            return;
+        }
+
+        Query<T> baseQuery = (Query<T>) event.getQuery();
+        QueryBuilder builder = this.repository.newQuery();
+
+        if (this.addedKeys) {
+            for (PersistentField<T> key : this.keys) {
+                builder.set(key.getName(), baseQuery.getValue(key.getName()));
+            }
+        }
+
+        builder.set(baseQuery.getValue(this.field).getValue()).saveSync();
     }
 
     @EventHandler
     public void onDelete(AccessorDeleteEvent event) {
-        // TODO
+        if (!this.field.isUpdateOnSave()) {
+            return;
+        }
+
+        Query<T> baseQuery = (Query<T>) event.getQuery();
+        RequirementBuilder builder = this.repository.newQuery().where();
+
+        if (this.addedKeys) {
+            for (PersistentField<T> key : this.keys) {
+                builder.andEquals(key.getName(), baseQuery.getValue(key.getName()));
+            }
+        } else {
+            builder.keysAre(baseQuery.getValue(this.field).getValue());
+        }
+
+        builder.closeAll().deleteSync();
     }
 }

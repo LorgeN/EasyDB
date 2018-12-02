@@ -39,6 +39,12 @@ public class Query<T> {
         return req;
     }
 
+    public FieldValue<T> getValue(String field) {
+        return Arrays.stream(this.values)
+          .filter(value -> value.getField().getName().equalsIgnoreCase(field))
+          .findFirst().orElse(null);
+    }
+
     public FieldValue<T> getValue(PersistentField<T> field) {
         return Arrays.stream(this.values)
           .filter(value -> value.getField().equals(field))
