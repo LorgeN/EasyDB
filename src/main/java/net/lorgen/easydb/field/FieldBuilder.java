@@ -74,7 +74,9 @@ public class FieldBuilder<T> {
     }
 
     /**
-     * Sets the {@link Field field} of this {@link PersistentField}.
+     * Sets the {@link Field field} of this {@link PersistentField}. If the given field
+     * does not belong (i. e. is not declared by) the type class, it will not be set
+     * as the field in this class and only the attributes will be copied.
      *
      * @param field      The {@link Field field}
      * @param autoConfig If the field's annotation and other data should be used
@@ -82,9 +84,10 @@ public class FieldBuilder<T> {
      * @return This
      */
     public FieldBuilder<T> setField(Field field, boolean autoConfig) {
-        Validate.isTrue(field.getDeclaringClass().equals(this.tClass), "Field not in type class!");
+        if (field.getDeclaringClass().equals(this.tClass)) {
+            this.field = field;
+        }
 
-        this.field = field;
         this.typeClass = field.getType();
 
         if (!autoConfig) {

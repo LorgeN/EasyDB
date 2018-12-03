@@ -30,6 +30,10 @@ public class ItemProfileBuilder<T> {
     }
 
     public ItemProfileBuilder<T> fromTypeClass() {
+        return this.fromClass(this.typeClass);
+    }
+
+    public ItemProfileBuilder<T> fromClass(Class<?> someClass) {
         int index = this.fields.length;
         for (Field field : this.typeClass.getDeclaredFields()) {
             // This one really doesn't need a lot of explanation
@@ -38,7 +42,7 @@ public class ItemProfileBuilder<T> {
                 continue;
             }
 
-            this.addField(new PersistentField<>(index++, typeClass, field));
+            this.addField(new FieldBuilder<>(index++, this.typeClass).setField(field, true).build());
         }
 
         return this;

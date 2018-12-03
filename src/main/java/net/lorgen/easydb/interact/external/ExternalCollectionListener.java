@@ -20,18 +20,22 @@ import net.lorgen.easydb.query.Query;
 import net.lorgen.easydb.query.QueryBuilder;
 import net.lorgen.easydb.query.req.RequirementBuilder;
 import net.lorgen.easydb.response.ResponseEntity;
+import net.lorgen.easydb.util.UtilType;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ExternalCollectionListener<T> implements Listener {
 
     private static final String INDEX_FIELD = "collection_index";
+    private static final String VALUE_FIELD = "value";
 
     private PersistentField<T> field;
 
@@ -45,24 +49,29 @@ public class ExternalCollectionListener<T> implements Listener {
     public ExternalCollectionListener(ListenableTypeAccessor<T> accessor, PersistentField<T> field) {
         this.field = field;
 
+        Class<?> storedClass = field.getTypeParameters()[0]; // Must have, if not -> exception
         DatabaseType type = DatabaseType.fromAccessor(accessor);
 
         try {
-            new ItemProfile<>(field.getTypeClass()); // Draw up a profile, so we can see what we're working with
+            new ItemProfile<>(storedClass); // Draw up a profile, so we can see what we're working with
 
-            this.repository = Repositories.getOrCreateRepository(null, type, field.getExternalTable(), field.getTypeClass(), field.getRepository());
+            this.repository = Repositories.getOrCreateRepository(null, type, field.getExternalTable(), storedClass, field.getRepository());
         } catch (IllegalArgumentException e) { // Exception thrown if no keys, so we need to create some
-            ItemProfileBuilder builder = new ItemProfileBuilder<>(this.field.getTypeClass());
+            ItemProfileBuilder builder = new ItemProfileBuilder<>(storedClass);
 
             for (PersistentField<T> key : accessor.getProfile().getKeys()) {
                 builder.newField().copyAttributes(key).setAsKey(true).buildAndAddField();
             }
 
-            builder.newField().setName(INDEX_FIELD).setTypeClass(Integer.class).setAsKey(true).buildAndAddField()
-              .fromTypeClass(); // Add the type class
+            builder.newField().setName(INDEX_FIELD).setTypeClass(Integer.class).setAsKey(true).buildAndAddField();
+            if (UtilType.isPrimitive(storedClass)) {
+                builder.newField().setName(VALUE_FIELD).setTypeClass(storedClass).buildAndAddField();
+            } else {
+                builder.fromTypeClass(); // Add the type class
+            }
 
             ItemProfile profile = builder.build();
-            this.repository = Repositories.createRepository(null, type, field.getExternalTable(), field.getTypeClass(), field.getRepository(), profile);
+            this.repository = Repositories.createRepository(null, type, field.getExternalTable(), storedClass, field.getRepository(), profile);
             this.keys = accessor.getProfile().getKeys(); // Use these keys so we get the correct objects
             this.addedKeys = true;
         }
@@ -144,13 +153,22 @@ public class ExternalCollectionListener<T> implements Listener {
             }
         }
 
-        List values = builder.closeAll().findAllSync();
-        Collection<?> collection = this.newInstance();
+        Collection collection = this.newInstance();
         if (collection == null) {
             return;
         }
 
-        collection.addAll(values);
+        Class<?> storedClass = this.field.getTypeParameters()[0];
+
+        List values = builder.closeAll().findAllSync().stream().map(element -> {
+            if (UtilType.isPrimitive(storedClass)) {
+                return element.getValue(VALUE_FIELD).getValue();
+            }
+
+            return element.getInstance();
+        }).collect(Collectors.toList());
+
+        Collections.addAll(collection, values);
         entity.getValue(this.field.getName()).setValue(collection);
     }
 
@@ -177,7 +195,14 @@ public class ExternalCollectionListener<T> implements Listener {
                 builder.set(INDEX_FIELD, i);
             }
 
-            builder.set(value).saveSync();
+            Class<?> storedClass = this.field.getTypeParameters()[0];
+            if (UtilType.isPrimitive(storedClass)) {
+                builder.set(VALUE_FIELD, value);
+            } else {
+                builder.set(value);
+            }
+
+            builder.saveSync();
         }
     }
 

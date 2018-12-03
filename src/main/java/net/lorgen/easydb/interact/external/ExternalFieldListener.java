@@ -1,6 +1,5 @@
 package net.lorgen.easydb.interact.external;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import net.lorgen.easydb.DatabaseType;
 import net.lorgen.easydb.ItemRepository;
@@ -19,11 +18,14 @@ import net.lorgen.easydb.query.Query;
 import net.lorgen.easydb.query.QueryBuilder;
 import net.lorgen.easydb.query.req.RequirementBuilder;
 import net.lorgen.easydb.response.ResponseEntity;
+import net.lorgen.easydb.util.UtilType;
 
 import java.util.Map;
 import java.util.Map.Entry;
 
 public class ExternalFieldListener<T> implements Listener {
+
+    private static final String VALUE_FIELD = "value";
 
     private PersistentField<T> field;
 
@@ -44,16 +46,21 @@ public class ExternalFieldListener<T> implements Listener {
 
             this.repository = Repositories.getOrCreateRepository(null, type, field.getExternalTable(), field.getTypeClass(), field.getRepository());
         } catch (IllegalArgumentException e) { // Exception thrown if no keys, so we need to create some
-            ItemProfileBuilder builder = new ItemProfileBuilder<>(this.field.getTypeClass());
+            ItemProfileBuilder builder = new ItemProfileBuilder<>(field.getTypeClass());
 
             for (PersistentField<T> key : accessor.getProfile().getKeys()) {
                 builder.newField().copyAttributes(key).setAsKey(true).buildAndAddField();
             }
 
-            builder.fromTypeClass(); // Add the type class
-            this.repository = Repositories.createRepository(null, type, field.getExternalTable(), field.getTypeClass(), field.getRepository(), builder.build());
-            this.keys = accessor.getProfile().getKeys();
+            if (UtilType.isPrimitive(field.getTypeClass())) {
+                builder.newField().setName(VALUE_FIELD).setTypeClass(field.getTypeClass()).buildAndAddField();
+            } else {
+                builder.fromTypeClass(); // Add the type class
+            }
 
+            ItemProfile profile = builder.build();
+            this.repository = Repositories.createRepository(null, type, field.getExternalTable(), field.getTypeClass(), field.getRepository(), profile);
+            this.keys = accessor.getProfile().getKeys(); // Use these keys so we get the correct objects
             this.addedKeys = true;
         }
 
@@ -134,7 +141,14 @@ public class ExternalFieldListener<T> implements Listener {
             }
         }
 
-        Object value = builder.closeAll().findFirstSync();
+        ResponseEntity responseEntity = builder.closeAll().findFirstSync();
+        Object value;
+        if (UtilType.isPrimitive(this.field.getTypeClass())) {
+            value = responseEntity.getValue(VALUE_FIELD).getValue();
+        } else {
+            value = responseEntity.getInstance();
+        }
+
         entity.getValue(this.field.getName()).setValue(value);
     }
 
@@ -153,7 +167,13 @@ public class ExternalFieldListener<T> implements Listener {
             }
         }
 
-        builder.set(baseQuery.getValue(this.field).getValue()).saveSync();
+        if (UtilType.isPrimitive(this.field.getTypeClass())) {
+            builder.set(VALUE_FIELD, baseQuery.getValue(this.field).getValue());
+        } else {
+            builder.set(baseQuery.getValue(this.field).getValue());
+        }
+
+        builder.saveSync();
     }
 
     @EventHandler
