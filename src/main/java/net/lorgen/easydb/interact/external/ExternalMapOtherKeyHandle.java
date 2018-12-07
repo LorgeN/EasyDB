@@ -90,7 +90,7 @@ public class ExternalMapOtherKeyHandle<T> extends OtherKeyHandle<T> {
                     e.printStackTrace();
                 }
             }
-            
+
             builder.set(entry.getValue()).saveSync();
         }
     }
