@@ -29,6 +29,8 @@ public interface ItemRepository<T> {
 
     ItemProfile<T> getProfile();
 
+    boolean isSearchable(PersistentField<T> field);
+
     default QueryBuilder<T> newQuery() {
         return new QueryBuilder<>(this);
     }

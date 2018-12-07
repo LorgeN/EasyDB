@@ -16,6 +16,8 @@ import java.util.Objects;
 
 public class PersistentField<T> {
 
+    // TODO: Convert to wrappers?
+
     private int fieldIndex;
     private Class<T> tClass;
     private Field field;
@@ -34,17 +36,16 @@ public class PersistentField<T> {
     private String joinLocalField;
     private String joinExternalField;
     private String tableStore;
-    private boolean updateOnSave;
+    private boolean transientSaving;
     private String[] keyFields;
     private Class<? extends ItemRepository> repository;
     private int[] indexIds;
 
-    // El constructoro of all constructoros
     protected PersistentField(int fieldIndex, Class<T> tClass, Field field, String name, DataType type, int size,
                               Class<?>[] typeParams, Class<? extends FieldSerializer> serializerClass, boolean key,
                               boolean autoIncr, boolean index, boolean uniqueIndex, boolean externalStore,
                               String joinTable, String joinLocalField, String joinExternalField, String tableStore,
-                              boolean updateOnSave, String[] keyFields, Class<? extends ItemRepository> repository,
+                              boolean transientSaving, String[] keyFields, Class<? extends ItemRepository> repository,
                               int[] indexIds, Class<?> typeClass) {
         this.fieldIndex = fieldIndex;
         this.tClass = tClass;
@@ -63,7 +64,7 @@ public class PersistentField<T> {
         this.joinLocalField = joinLocalField;
         this.joinExternalField = joinExternalField;
         this.tableStore = tableStore;
-        this.updateOnSave = updateOnSave;
+        this.transientSaving = transientSaving;
         this.keyFields = keyFields;
         this.repository = repository;
         this.indexIds = indexIds;
@@ -115,7 +116,7 @@ public class PersistentField<T> {
                 this.tableStore = table.table();
                 this.externalStore = !table.saveKeyLocally();
                 this.keyFields = table.keyFields();
-                this.updateOnSave = !table.immutable();
+                this.transientSaving = table.immutable();
                 this.repository = table.repository();
             }
         }
@@ -132,14 +133,28 @@ public class PersistentField<T> {
     public Object getRawFieldValue(T object) {
         Validate.notNull(object);
 
-        try {
-            boolean accessible = this.field.isAccessible();
-            this.field.setAccessible(true);
+        Field field;
+        if (this.field != null) {
+            field = this.field;
+        } else {
+            Class<T> objectClass = (Class<T>) object.getClass();
 
-            Object value = this.field.get(object);
+            try {
+                field = objectClass.getDeclaredField(this.getName());
+            } catch (NoSuchFieldException e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+
+        try {
+            boolean accessible = field.isAccessible();
+            field.setAccessible(true);
+
+            Object value = field.get(object);
 
             // Restore to previous state
-            this.field.setAccessible(accessible);
+            field.setAccessible(accessible);
 
             return value;
         } catch (IllegalAccessException e) {
@@ -203,6 +218,10 @@ public class PersistentField<T> {
 
     public DataType getType() {
         return type;
+    }
+
+    public void setType(DataType type) {
+        this.type = type;
     }
 
     public int getSize() {
@@ -269,8 +288,8 @@ public class PersistentField<T> {
         return tableStore;
     }
 
-    public boolean isUpdateOnSave() {
-        return updateOnSave;
+    public boolean isTransient() {
+        return transientSaving;
     }
 
     public boolean isAutoIncr() {
@@ -325,7 +344,7 @@ public class PersistentField<T> {
           ", joinLocalField='" + joinLocalField + '\'' +
           ", joinExternalField='" + joinExternalField + '\'' +
           ", tableStore='" + tableStore + '\'' +
-          ", updateOnSave=" + updateOnSave +
+          ", transientSaving=" + transientSaving +
           ", repository=" + repository +
           ", indexIds=" + Arrays.toString(indexIds) +
           '}';

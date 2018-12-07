@@ -37,6 +37,12 @@ public class ResponseEntity<T> {
         return values;
     }
 
+    public FieldValue<T> getValue(PersistentField<T> field) {
+        return Arrays.stream(this.getValues())
+          .filter(value -> value.getField().equals(field))
+          .findFirst().orElse(null);
+    }
+
     public FieldValue<T> getValue(String fieldName) {
         return Arrays.stream(this.getValues())
           .filter(value -> value.getField().getName().equalsIgnoreCase(fieldName))

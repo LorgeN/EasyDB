@@ -1,6 +1,7 @@
 package net.lorgen.easydb;
 
 import net.lorgen.easydb.access.DatabaseTypeAccessor;
+import net.lorgen.easydb.field.PersistentField;
 
 /**
  * A special case of @{@link ItemRepository}, where this repository
@@ -20,5 +21,10 @@ public interface DatabaseRepository<T> extends ItemRepository<T> {
      * @return The database {@link DatabaseType type}
      */
     DatabaseType getDatabaseType();
+
+    @Override
+    default boolean isSearchable(PersistentField<T> field) {
+        return this.getDatabaseAccessor().isSearchable(field);
+    }
 }
 

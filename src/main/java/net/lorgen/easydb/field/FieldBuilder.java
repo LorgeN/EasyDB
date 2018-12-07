@@ -8,7 +8,6 @@ import net.lorgen.easydb.StorageKey;
 import net.lorgen.easydb.interact.external.External;
 import net.lorgen.easydb.interact.join.Join;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
 
 import java.lang.reflect.Field;
 
@@ -39,7 +38,7 @@ public class FieldBuilder<T> {
     private String joinLocalField;
     private String joinExternalField;
     private String tableStore;
-    private boolean updateOnSave;
+    private boolean transientField;
     private String[] keyFields;
     private Class<? extends ItemRepository> repository;
     private int[] indexIds;
@@ -363,7 +362,7 @@ public class FieldBuilder<T> {
         this.tableStore = table.table();
         this.externalStore = !table.saveKeyLocally();
         this.keyFields = table.keyFields();
-        this.updateOnSave = !table.immutable();
+        this.transientField = !table.immutable();
         this.repository = table.repository();
         return this;
     }
@@ -451,7 +450,7 @@ public class FieldBuilder<T> {
     public FieldBuilder<T> setTable(String table, boolean saveKeyLocally, boolean immutable, String[] keyFields, Class<? extends ItemRepository> repository) {
         this.tableStore = table;
         this.externalStore = !saveKeyLocally;
-        this.updateOnSave = !immutable;
+        this.transientField = immutable;
         this.keyFields = keyFields;
         this.repository = repository;
         return this;
@@ -473,6 +472,6 @@ public class FieldBuilder<T> {
 
         return new PersistentField<>(fieldIndex, tClass, field, name, type, size, typeParams, serializerClass, key,
           autoIncr, index, uniqueIndex, externalStore, joinTable, joinLocalField, joinExternalField, tableStore,
-          updateOnSave, keyFields, repository, indexIds, typeClass);
+          transientField, keyFields, repository, indexIds, typeClass);
     }
 }

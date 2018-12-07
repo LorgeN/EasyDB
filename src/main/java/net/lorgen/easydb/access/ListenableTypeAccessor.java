@@ -11,8 +11,9 @@ import net.lorgen.easydb.access.event.AccessorSetUpEvent;
 import net.lorgen.easydb.event.EventManager;
 import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.interact.external.External;
-import net.lorgen.easydb.interact.external.ExternalCollectionListener;
-import net.lorgen.easydb.interact.external.ExternalFieldListener;
+import net.lorgen.easydb.interact.external.ExternalCollectionOtherKeyHandle;
+import net.lorgen.easydb.interact.external.ExternalFieldOtherKeyHandle;
+import net.lorgen.easydb.interact.external.ExternalMapOtherKeyHandle;
 import net.lorgen.easydb.query.Query;
 import net.lorgen.easydb.response.ResponseEntity;
 
@@ -56,18 +57,23 @@ public abstract class ListenableTypeAccessor<T> implements DatabaseTypeAccessor<
                 continue;
             }
 
-            Class<?> typeClass = field.getTypeClass();
-            if (Map.class.isAssignableFrom(typeClass)) {
+            if (!field.isExternalStore()) {
                 // TODO: Handle this
                 continue;
             }
 
-            if (Collection.class.isAssignableFrom(typeClass)) {
-                this.getEventManager().registerListener(new ExternalCollectionListener<>(this, field));
+            Class<?> typeClass = field.getTypeClass();
+            if (Map.class.isAssignableFrom(typeClass)) {
+                this.getEventManager().registerListener(new ExternalMapOtherKeyHandle<>(this, field));
                 continue;
             }
 
-            this.getEventManager().registerListener(new ExternalFieldListener<>(this, field));
+            if (Collection.class.isAssignableFrom(typeClass)) {
+                this.getEventManager().registerListener(new ExternalCollectionOtherKeyHandle<>(this, field));
+                continue;
+            }
+
+            this.getEventManager().registerListener(new ExternalFieldOtherKeyHandle<>(this, field));
         }
     }
 
