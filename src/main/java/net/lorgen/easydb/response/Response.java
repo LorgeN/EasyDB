@@ -16,7 +16,7 @@ import java.util.Optional;
  *
  * @param <T> The type of the repository
  */
-public class ResponseEntity<T> {
+public class Response<T> {
 
     private ItemProfile<T> profile; // The profile of the item
     private FieldValue<T>[] values; // The loaded values
@@ -24,11 +24,11 @@ public class ResponseEntity<T> {
     // and in that case don't try again, wasting resources
     private Optional<T> createdInstance; // The created instance (If created)
 
-    public ResponseEntity(ItemProfile<T> profile) {
+    public Response(ItemProfile<T> profile) {
         this.profile = profile;
     }
 
-    public ResponseEntity(ItemProfile<T> profile, FieldValue<T>[] values) {
+    public Response(ItemProfile<T> profile, FieldValue<T>[] values) {
         this.profile = profile;
         this.values = values;
     }

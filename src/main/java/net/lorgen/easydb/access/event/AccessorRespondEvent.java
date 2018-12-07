@@ -3,20 +3,20 @@ package net.lorgen.easydb.access.event;
 import net.lorgen.easydb.access.DatabaseTypeAccessor;
 import net.lorgen.easydb.event.HandlerList;
 import net.lorgen.easydb.query.Query;
-import net.lorgen.easydb.response.ResponseEntity;
+import net.lorgen.easydb.response.Response;
 
 public class AccessorRespondEvent extends QueryEvent<AccessorRespondEvent> {
 
     private static final HandlerList<AccessorRespondEvent> HANDLER_LIST = new HandlerList<>();
 
-    private ResponseEntity<?> entity;
+    private Response<?> entity;
 
-    public AccessorRespondEvent(DatabaseTypeAccessor<?> accessor, Query<?> query, ResponseEntity<?> entity) {
+    public AccessorRespondEvent(DatabaseTypeAccessor<?> accessor, Query<?> query, Response<?> entity) {
         super(accessor, query);
         this.entity = entity;
     }
 
-    public ResponseEntity<?> getEntity() {
+    public Response<?> getEntity() {
         return entity;
     }
 

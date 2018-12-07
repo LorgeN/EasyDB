@@ -7,11 +7,11 @@ import org.apache.commons.lang3.Validate;
 
 public class SQLConfiguration extends ConnectionConfiguration {
 
-    private static final String HOST_KEY = "host";
-    private static final String DATABASE_KEY = "database";
-    private static final String USER_KEY = "user";
-    private static final String PASSWORD_KEY = "password";
-    private static final String PORT_KEY = "port";
+    protected static final String HOST_KEY = "host";
+    protected static final String DATABASE_KEY = "database";
+    protected static final String USER_KEY = "user";
+    protected static final String PASSWORD_KEY = "password";
+    protected static final String PORT_KEY = "port";
 
     public SQLConfiguration(String host, String database, String user, String password, int port) {
         super(DatabaseType.SQL);

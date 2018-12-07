@@ -2,7 +2,7 @@ package net.lorgen.easydb.test.integration.tests;
 
 import com.google.common.collect.Lists;
 import net.lorgen.easydb.SimpleRepository;
-import net.lorgen.easydb.response.ResponseEntity;
+import net.lorgen.easydb.response.Response;
 import net.lorgen.easydb.test.TestItem;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -36,7 +36,7 @@ public class DatabaseSetupIT {
 
     @Test
     public void testCAssertReset() {
-        List<ResponseEntity<TestItem>> list = this.manager.newQuery().findAllSync();
+        List<Response<TestItem>> list = this.manager.newQuery().findAllSync();
 
         assertThat(list).isEmpty();
     }

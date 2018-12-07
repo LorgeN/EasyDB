@@ -7,9 +7,9 @@ import org.apache.commons.lang3.Validate;
 
 public class RedisConfiguration extends ConnectionConfiguration {
 
-    private static final String HOST_KEY = "host";
-    private static final String PASSWORD_KEY = "password";
-    private static final String PORT_KEY = "port";
+    protected static final String HOST_KEY = "host";
+    protected static final String PASSWORD_KEY = "password";
+    protected static final String PORT_KEY = "port";
 
     public RedisConfiguration(String host, String password, int port) {
         super(DatabaseType.REDIS);

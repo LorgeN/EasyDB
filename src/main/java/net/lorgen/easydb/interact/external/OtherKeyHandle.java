@@ -7,7 +7,7 @@ import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.query.Query;
 import net.lorgen.easydb.query.QueryBuilder;
 import net.lorgen.easydb.query.req.RequirementBuilder;
-import net.lorgen.easydb.response.ResponseEntity;
+import net.lorgen.easydb.response.Response;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -63,7 +63,7 @@ public abstract class OtherKeyHandle<T> extends FieldHandle<T> {
         builder.saveSync();
     }
 
-    public Object extractValue(ResponseEntity entity) {
+    public Object extractValue(Response entity) {
         return this.isPrimitive(this.getField().getTypeParameters()[0]) ? entity.getValue(VALUE_FIELD).getValue() : entity.getInstance();
     }
 
@@ -81,15 +81,15 @@ public abstract class OtherKeyHandle<T> extends FieldHandle<T> {
         builder.closeAll().deleteSync();
     }
 
-    public ResponseEntity getResponse(ResponseEntity<T> entity) {
+    public Response getResponse(Response<T> entity) {
         return this.buildQuery(entity).findFirstSync();
     }
 
-    public List<ResponseEntity> getResponses(ResponseEntity<T> entity) {
+    public List<Response> getResponses(Response<T> entity) {
         return Lists.newArrayList(this.buildQuery(entity).findAllSync());
     }
 
-    public QueryBuilder<?> buildQuery(ResponseEntity<T> entity) {
+    public QueryBuilder<?> buildQuery(Response<T> entity) {
         RequirementBuilder<?> builder = this.getRepository().newQuery().where();
 
         for (String key : this.getKeys()) {

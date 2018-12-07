@@ -5,7 +5,7 @@ import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.ItemRepository;
 import net.lorgen.easydb.query.req.QueryRequirement;
 import net.lorgen.easydb.query.req.RequirementBuilder;
-import net.lorgen.easydb.response.ResponseEntity;
+import net.lorgen.easydb.response.Response;
 import net.lorgen.easydb.util.Callback;
 
 import java.util.Arrays;
@@ -72,19 +72,19 @@ public class QueryBuilder<T> {
 
     // Shortcut methods
 
-    public void findFirstAsync(Callback<ResponseEntity<T>> callback) {
+    public void findFirstAsync(Callback<Response<T>> callback) {
         manager.findFirstAsync(this.build(), callback);
     }
 
-    public ResponseEntity<T> findFirstSync() {
+    public Response<T> findFirstSync() {
         return manager.findFirstSync(this.build());
     }
 
-    public void findAllAsync(Callback<List<ResponseEntity<T>>> callback) {
+    public void findAllAsync(Callback<List<Response<T>>> callback) {
         manager.findAllAsync(this.build(), callback);
     }
 
-    public List<ResponseEntity<T>> findAllSync() {
+    public List<Response<T>> findAllSync() {
         return manager.findAllSync(this.build());
     }
 

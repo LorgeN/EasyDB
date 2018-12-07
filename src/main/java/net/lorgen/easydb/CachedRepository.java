@@ -3,7 +3,7 @@ package net.lorgen.easydb;
 import com.google.common.collect.Maps;
 import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.query.Query;
-import net.lorgen.easydb.response.ResponseEntity;
+import net.lorgen.easydb.response.Response;
 
 import java.util.Arrays;
 import java.util.List;
@@ -35,13 +35,13 @@ public class CachedRepository<T> implements ItemRepository<T> {
     }
 
     @Override
-    public ResponseEntity<T> findFirstSync(Query<T> query) {
+    public Response<T> findFirstSync(Query<T> query) {
         // TODO
         return null;
     }
 
     @Override
-    public List<ResponseEntity<T>> findAllSync(Query<T> query) {
+    public List<Response<T>> findAllSync(Query<T> query) {
         // TODO
         return null;
     }

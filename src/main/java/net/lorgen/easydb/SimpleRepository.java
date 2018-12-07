@@ -4,7 +4,7 @@ import net.lorgen.easydb.access.DatabaseTypeAccessor;
 import net.lorgen.easydb.connection.configuration.ConnectionConfiguration;
 import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.query.Query;
-import net.lorgen.easydb.response.ResponseEntity;
+import net.lorgen.easydb.response.Response;
 
 import java.util.List;
 import java.util.Objects;
@@ -81,12 +81,12 @@ public class SimpleRepository<T> implements DatabaseRepository<T> {
     }
 
     @Override
-    public ResponseEntity<T> findFirstSync(Query<T> query) {
+    public Response<T> findFirstSync(Query<T> query) {
         return accessor.findFirst(query);
     }
 
     @Override
-    public List<ResponseEntity<T>> findAllSync(Query<T> query) {
+    public List<Response<T>> findAllSync(Query<T> query) {
         return accessor.findAll(query);
     }
 

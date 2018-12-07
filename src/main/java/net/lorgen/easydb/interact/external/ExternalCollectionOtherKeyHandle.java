@@ -13,7 +13,7 @@ import net.lorgen.easydb.event.EventHandler;
 import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.query.Query;
-import net.lorgen.easydb.response.ResponseEntity;
+import net.lorgen.easydb.response.Response;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -64,7 +64,7 @@ public class ExternalCollectionOtherKeyHandle<T> extends OtherKeyHandle<T> {
             return;
         }
 
-        Collections.addAll(collection, this.getResponses((ResponseEntity<T>) event.getEntity()).stream()
+        Collections.addAll(collection, this.getResponses((Response<T>) event.getEntity()).stream()
           .map(this::extractValue)
           .collect(Collectors.toList()));
 

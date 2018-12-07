@@ -26,7 +26,7 @@ import net.lorgen.easydb.query.req.QueryRequirement;
 import net.lorgen.easydb.query.req.SimpleRequirement;
 import net.lorgen.easydb.query.traverse.RequirementCase;
 import net.lorgen.easydb.query.traverse.RequirementTraverser;
-import net.lorgen.easydb.response.ResponseEntity;
+import net.lorgen.easydb.response.Response;
 import redis.clients.jedis.Jedis;
 
 import java.util.Arrays;
@@ -119,7 +119,7 @@ public class RedisAccessor<T> extends ListenableTypeAccessor<T> {
     }
 
     @Override
-    public ResponseEntity<T> findFirstInternal(Query<T> query) {
+    public Response<T> findFirstInternal(Query<T> query) {
         try {
             if (query.getRequirement() == null) {
                 return this.getFirst();
@@ -132,7 +132,7 @@ public class RedisAccessor<T> extends ListenableTypeAccessor<T> {
     }
 
     @Override
-    public List<ResponseEntity<T>> findAllInternal(Query<T> query) {
+    public List<Response<T>> findAllInternal(Query<T> query) {
         try {
             if (query.getRequirement() == null) {
                 return this.getAll();
@@ -245,10 +245,10 @@ public class RedisAccessor<T> extends ListenableTypeAccessor<T> {
 
     // Internals
 
-    private List<ResponseEntity<T>> getAll() {
+    private List<Response<T>> getAll() {
         try (Jedis jedis = this.getResource()) {
             Set<String> keys = jedis.keys(String.format(STORE_FORMAT, this.table, "*"));
-            List<ResponseEntity<T>> list = Lists.newArrayList();
+            List<Response<T>> list = Lists.newArrayList();
             for (String key : keys) {
                 list.add(this.getObject(key));
             }
@@ -257,21 +257,21 @@ public class RedisAccessor<T> extends ListenableTypeAccessor<T> {
         }
     }
 
-    private ResponseEntity<T> getFirst() {
+    private Response<T> getFirst() {
         try (Jedis jedis = this.getResource()) {
             Set<String> keys = jedis.keys(String.format(STORE_FORMAT, this.table, "*"));
             String key = Iterables.getFirst(keys, null);
             if (key == null) {
-                return new ResponseEntity<>(this.repository.getProfile());
+                return new Response<>(this.repository.getProfile());
             }
 
             return this.getObject(key);
         }
     }
 
-    private List<ResponseEntity<T>> getAll(QueryRequirement requirement) {
+    private List<Response<T>> getAll(QueryRequirement requirement) {
         List<String> keys = this.getKeys(requirement);
-        List<ResponseEntity<T>> list = Lists.newArrayList();
+        List<Response<T>> list = Lists.newArrayList();
         for (String key : keys) {
             list.add(this.getObject(key));
         }
@@ -279,22 +279,22 @@ public class RedisAccessor<T> extends ListenableTypeAccessor<T> {
         return list;
     }
 
-    private ResponseEntity<T> getFirst(QueryRequirement requirement) {
+    private Response<T> getFirst(QueryRequirement requirement) {
         List<String> keys = this.getKeys(requirement);
         if (keys.size() == 0) {
-            return new ResponseEntity<>(this.repository.getProfile());
+            return new Response<>(this.repository.getProfile());
         }
 
         return this.getObject(keys.get(0));
     }
 
-    private ResponseEntity<T> getObject(String key) {
+    private Response<T> getObject(String key) {
         FieldValue<T>[] values = this.getValues(key);
         if (values == null) {
-            return new ResponseEntity<>(this.repository.getProfile());
+            return new Response<>(this.repository.getProfile());
         }
 
-        return new ResponseEntity<>(this.repository.getProfile(), values);
+        return new Response<>(this.repository.getProfile(), values);
     }
 
     private FieldValue<T>[] getValues(String key) {
@@ -586,7 +586,7 @@ public class RedisAccessor<T> extends ListenableTypeAccessor<T> {
         public FieldValue<?>[] getValues(FieldValue<T>[] values) {
             Object localFieldValue = this.accessor.repository.getArrayValue(this.accessor.repository.getProfile().resolveField(this.getLocalField()), values);
 
-            ResponseEntity<?> response = this.repository.newQuery()
+            Response<?> response = this.repository.newQuery()
               .where().equals(this.getRemoteField(), localFieldValue).closeAll()
               .findFirstSync();
 

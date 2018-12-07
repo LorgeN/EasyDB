@@ -20,7 +20,7 @@ import net.lorgen.easydb.query.Query;
 import net.lorgen.easydb.query.req.CombinedRequirement;
 import net.lorgen.easydb.query.req.QueryRequirement;
 import net.lorgen.easydb.query.req.SimpleRequirement;
-import net.lorgen.easydb.response.ResponseEntity;
+import net.lorgen.easydb.response.Response;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -241,13 +241,13 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
     }
 
     @Override
-    public ResponseEntity<T> findFirstInternal(Query<T> query) {
+    public Response<T> findFirstInternal(Query<T> query) {
         String statement = this.getStatement(query);
 
         try (Connection connection = this.getConnection()) {
             ResultSet result = connection.createStatement().executeQuery(statement);
             if (!result.next()) {
-                return new ResponseEntity<>(this.repository.getProfile());
+                return new Response<>(this.repository.getProfile());
             }
 
             return this.fromResultSet(result);
@@ -257,12 +257,12 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
     }
 
     @Override
-    public List<ResponseEntity<T>> findAllInternal(Query<T> query) {
+    public List<Response<T>> findAllInternal(Query<T> query) {
         String statement = this.getStatement(query);
 
         try (Connection connection = this.getConnection()) {
             ResultSet result = connection.createStatement().executeQuery(statement);
-            List<ResponseEntity<T>> list = Lists.newArrayList();
+            List<Response<T>> list = Lists.newArrayList();
 
             while (result.next()) {
                 list.add(this.fromResultSet(result));
@@ -474,8 +474,8 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
         return "`" + this.table + "`";
     }
 
-    private ResponseEntity<T> fromResultSet(ResultSet set) {
-        return new ResponseEntity<>(this.repository.getProfile(), this.getValuesFromResultSet(set));
+    private Response<T> fromResultSet(ResultSet set) {
+        return new Response<>(this.repository.getProfile(), this.getValuesFromResultSet(set));
     }
 
     private FieldValue<T>[] getValuesFromResultSet(ResultSet set) {

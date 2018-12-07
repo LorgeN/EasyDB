@@ -11,7 +11,7 @@ import net.lorgen.easydb.event.EventHandler;
 import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.query.Query;
-import net.lorgen.easydb.response.ResponseEntity;
+import net.lorgen.easydb.response.Response;
 
 public class ExternalFieldOtherKeyHandle<T> extends OtherKeyHandle<T> {
 
@@ -48,8 +48,8 @@ public class ExternalFieldOtherKeyHandle<T> extends OtherKeyHandle<T> {
 
     @EventHandler
     public void onRespond(AccessorRespondEvent event) {
-        ResponseEntity<T> response = (ResponseEntity<T>) event.getEntity();
-        ResponseEntity responseEntity = this.getResponse(response);
+        Response<T> response = (Response<T>) event.getEntity();
+        Response responseEntity = this.getResponse(response);
         response.getValue(this.getField().getName()).setValue(this.extractValue(responseEntity));
     }
 

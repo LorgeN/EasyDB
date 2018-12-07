@@ -3,7 +3,7 @@ package net.lorgen.easydb.access;
 import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.query.Query;
-import net.lorgen.easydb.response.ResponseEntity;
+import net.lorgen.easydb.response.Response;
 
 import java.util.List;
 
@@ -31,7 +31,7 @@ public interface DatabaseTypeAccessor<T> {
      * @param query The {@link Query query}
      * @return The first T value to match the given parameters
      */
-    ResponseEntity<T> findFirst(Query<T> query);
+    Response<T> findFirst(Query<T> query);
 
     /**
      * Looks for all T values matching the given parameters
@@ -39,7 +39,7 @@ public interface DatabaseTypeAccessor<T> {
      * @param query The {@link Query query}
      * @return All T values to match the given parameters
      */
-    List<ResponseEntity<T>> findAll(Query<T> query);
+    List<Response<T>> findAll(Query<T> query);
 
     /**
      * Saves or updates any T value matching the given parameters

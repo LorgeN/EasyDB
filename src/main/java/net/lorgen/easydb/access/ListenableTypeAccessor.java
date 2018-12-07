@@ -15,7 +15,7 @@ import net.lorgen.easydb.interact.external.ExternalCollectionOtherKeyHandle;
 import net.lorgen.easydb.interact.external.ExternalFieldOtherKeyHandle;
 import net.lorgen.easydb.interact.external.ExternalMapOtherKeyHandle;
 import net.lorgen.easydb.query.Query;
-import net.lorgen.easydb.response.ResponseEntity;
+import net.lorgen.easydb.response.Response;
 
 import java.util.Collection;
 import java.util.List;
@@ -80,8 +80,8 @@ public abstract class ListenableTypeAccessor<T> implements DatabaseTypeAccessor<
     protected abstract void setUpInternal();
 
     @Override
-    public ResponseEntity<T> findFirst(Query<T> query) {
-        ResponseEntity<T> response = this.findFirstInternal(query);
+    public Response<T> findFirst(Query<T> query) {
+        Response<T> response = this.findFirstInternal(query);
 
         AccessorFindFirstEvent findFirstEvent = new AccessorFindFirstEvent(this, query, response);
         this.getEventManager().callEvent(findFirstEvent);
@@ -92,16 +92,16 @@ public abstract class ListenableTypeAccessor<T> implements DatabaseTypeAccessor<
         return response;
     }
 
-    protected abstract ResponseEntity<T> findFirstInternal(Query<T> query);
+    protected abstract Response<T> findFirstInternal(Query<T> query);
 
     @Override
-    public List<ResponseEntity<T>> findAll(Query<T> query) {
-        List<ResponseEntity<T>> responses = this.findAllInternal(query);
+    public List<Response<T>> findAll(Query<T> query) {
+        List<Response<T>> responses = this.findAllInternal(query);
 
         AccessorFindAllEvent findAllEvent = new AccessorFindAllEvent(this, query, Lists.newArrayList(responses));
         this.getEventManager().callEvent(findAllEvent);
 
-        for (ResponseEntity<T> response : responses) {
+        for (Response<T> response : responses) {
             AccessorRespondEvent respondEvent = new AccessorRespondEvent(this, query, response);
             this.getEventManager().callEvent(respondEvent);
         }
@@ -109,7 +109,7 @@ public abstract class ListenableTypeAccessor<T> implements DatabaseTypeAccessor<
         return responses;
     }
 
-    public abstract List<ResponseEntity<T>> findAllInternal(Query<T> query);
+    public abstract List<Response<T>> findAllInternal(Query<T> query);
 
     @Override
     public void saveOrUpdate(Query<T> query) {

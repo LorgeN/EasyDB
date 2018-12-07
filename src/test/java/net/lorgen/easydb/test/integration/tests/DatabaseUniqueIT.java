@@ -4,7 +4,7 @@ import com.google.common.collect.Lists;
 import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.SimpleRepository;
-import net.lorgen.easydb.response.ResponseEntity;
+import net.lorgen.easydb.response.Response;
 import net.lorgen.easydb.test.TestItem;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -61,7 +61,7 @@ public class DatabaseUniqueIT {
     }
 
     private void validateEquals(TestItem item) {
-        List<ResponseEntity<TestItem>> actualList = this.manager.newQuery().where().equals("username", item.getUsername()).closeAll().findAllSync();
+        List<Response<TestItem>> actualList = this.manager.newQuery().where().equals("username", item.getUsername()).closeAll().findAllSync();
 
         assertThat(actualList.size()).isEqualTo(1);
 

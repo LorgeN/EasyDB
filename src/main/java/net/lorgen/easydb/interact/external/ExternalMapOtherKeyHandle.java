@@ -13,7 +13,7 @@ import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.query.Query;
 import net.lorgen.easydb.query.QueryBuilder;
-import net.lorgen.easydb.response.ResponseEntity;
+import net.lorgen.easydb.response.Response;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -49,7 +49,7 @@ public class ExternalMapOtherKeyHandle<T> extends OtherKeyHandle<T> {
             return;
         }
 
-        for (ResponseEntity entity : this.getResponses((ResponseEntity<T>) event.getEntity())) {
+        for (Response entity : this.getResponses((Response<T>) event.getEntity())) {
             Object key = this.extractKey(entity);
             Object value = this.extractValue(entity);
 
@@ -107,7 +107,7 @@ public class ExternalMapOtherKeyHandle<T> extends OtherKeyHandle<T> {
 
     // Internals
 
-    private Object extractKey(ResponseEntity entity) {
+    private Object extractKey(Response entity) {
         Class<?> keyClass = this.getField().getTypeParameters()[0];
         if (this.isPrimitive(keyClass)) {
             return entity.getValue(KEY_FIELD).getValue();

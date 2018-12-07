@@ -5,7 +5,7 @@ import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.query.Query;
 import net.lorgen.easydb.query.QueryBuilder;
-import net.lorgen.easydb.response.ResponseEntity;
+import net.lorgen.easydb.response.Response;
 import net.lorgen.easydb.util.Callback;
 import net.lorgen.easydb.util.concurrency.UtilConcurrency;
 
@@ -35,23 +35,23 @@ public interface ItemRepository<T> {
         return new QueryBuilder<>(this);
     }
 
-    default void findFirstAsync(Query<T> query, Callback<ResponseEntity<T>> callback) {
+    default void findFirstAsync(Query<T> query, Callback<Response<T>> callback) {
         UtilConcurrency.submit(() -> {
-            ResponseEntity<T> value = this.findFirstSync(query);
+            Response<T> value = this.findFirstSync(query);
             callback.call(value);
         });
     }
 
-    ResponseEntity<T> findFirstSync(Query<T> query);
+    Response<T> findFirstSync(Query<T> query);
 
-    default void findAllAsync(Query<T> query, Callback<List<ResponseEntity<T>>> callback) {
+    default void findAllAsync(Query<T> query, Callback<List<Response<T>>> callback) {
         UtilConcurrency.submit(() -> {
-            List<ResponseEntity<T>> value = this.findAllSync(query);
+            List<Response<T>> value = this.findAllSync(query);
             callback.call(value);
         });
     }
 
-    List<ResponseEntity<T>> findAllSync(Query<T> query);
+    List<Response<T>> findAllSync(Query<T> query);
 
     default void saveAsync(T object) {
         this.saveAsync(this.newQuery()
