@@ -36,7 +36,6 @@ public class RequirementTraverserTest {
     @Parameter(1)
     public RequirementCase[] cases;
 
-
     @Test
     public void requirementTraverseTest() {
         RequirementTraverser traverser = new RequirementTraverser(this.requirement);
