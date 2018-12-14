@@ -24,6 +24,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static com.google.common.truth.Truth.*;
+
 @RunWith(Parameterized.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class BasicDatabaseTest {
@@ -37,14 +39,14 @@ public class BasicDatabaseTest {
         registry.registerConfiguration(this.configuration);
 
         ItemRepository<TestItem> repository = this.getRepository();
-        Truth.assertThat(repository).isNotNull();
+        assertThat(repository).isNotNull();
     }
 
     @Test
     public void testBSaveFindUpdateDelete() {
         ItemRepository<TestItem> repository = this.getRepository();
 
-        Truth.assertThat(repository).isNotNull();
+        assertThat(repository).isNotNull();
 
         for (TestItem item : this.getTestItems(10)) {
             repository.newQuery()
@@ -55,8 +57,8 @@ public class BasicDatabaseTest {
               .where().keysAre(item)
               .closeAll().findFirstSync();
 
-            Truth.assertThat(found.isEmpty()).isFalse();
-            Truth.assertThat(found.getInstance()).isEqualTo(item);
+            assertThat(found.isEmpty()).isFalse();
+            assertThat(found.getInstance()).isEqualTo(item);
 
             String oldUsername = item.getUsername();
             String newUsername = this.randomString();
@@ -72,14 +74,14 @@ public class BasicDatabaseTest {
               .where().keysAre(item)
               .closeAll().findFirstSync();
 
-            Truth.assertThat(found.isEmpty()).isFalse();
-            Truth.assertThat(found.getInstance()).isEqualTo(item);
+            assertThat(found.isEmpty()).isFalse();
+            assertThat(found.getInstance()).isEqualTo(item);
 
             found = repository.newQuery()
               .where().equals("username", oldUsername).closeAll()
               .findFirstSync();
 
-            Truth.assertThat(found.isEmpty()).isTrue();
+            assertThat(found.isEmpty()).isTrue();
 
             repository.newQuery().where().keysAre(item).closeAll().deleteSync();
         }
