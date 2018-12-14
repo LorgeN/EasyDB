@@ -8,6 +8,8 @@ import net.lorgen.easydb.StoredItem;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.beans.ConstructorProperties;
+
 public class TestItem implements StoredItem {
 
     @StorageKey(autoIncrement = true)

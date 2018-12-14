@@ -49,41 +49,63 @@ public class BasicDatabaseTest {
         assertThat(repository).isNotNull();
 
         for (TestItem item : this.getTestItems(10)) {
+            // Save the item to the repository
             repository.newQuery()
               .set(item)
               .saveSync();
 
+            // Try fetching the item
             Response<TestItem> found = repository.newQuery()
               .where().keysAre(item)
               .closeAll().findFirstSync();
 
+            // Verify we actually found something
             assertThat(found.isEmpty()).isFalse();
+            // Verify we found the correct thing
             assertThat(found.getInstance()).isEqualTo(item);
 
+            // Store the old username
             String oldUsername = item.getUsername();
+            // Generate a new username
             String newUsername = this.randomString();
 
+            // Update the value in the database
             repository.newQuery()
               .set("username", newUsername)
               .where().keysAre(item).closeAll()
               .saveSync();
 
+            // Update the local instance
             item.setUsername(newUsername);
 
+            // Fetch the new value from the database
             found = repository.newQuery()
               .where().keysAre(item)
               .closeAll().findFirstSync();
 
+            // Assert that we found something
             assertThat(found.isEmpty()).isFalse();
+            // Assert that it was actually updated
             assertThat(found.getInstance()).isEqualTo(item);
 
+            // Try finding an item with the old username
             found = repository.newQuery()
               .where().equals("username", oldUsername).closeAll()
               .findFirstSync();
 
+            // Assert that no such item exists
             assertThat(found.isEmpty()).isTrue();
 
+            // Delete the item
             repository.newQuery().where().keysAre(item).closeAll().deleteSync();
+
+            // Try to find it again
+            found = repository.newQuery()
+              .where().keysAre(item)
+              .closeAll().findFirstSync();
+
+            // Assert that nothing was found
+            assertThat(found.isEmpty()).isTrue();
         }
     }
 
