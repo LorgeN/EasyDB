@@ -1,6 +1,7 @@
 package net.lorgen.easydb;
 
 import com.google.common.collect.Maps;
+import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.query.Query;
 import net.lorgen.easydb.response.Response;
@@ -17,6 +18,11 @@ public class CachedRepository<T> implements ItemRepository<T> {
     public CachedRepository(ItemRepository<T> underlyingRepository) {
         this.underlyingRepository = underlyingRepository;
         this.keyToValueMap = Maps.newHashMap();
+    }
+
+    @Override
+    public boolean isSearchable(PersistentField<T> field) {
+        return false;
     }
 
     @Override

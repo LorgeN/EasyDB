@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import net.lorgen.easydb.DatabaseType;
 import net.lorgen.easydb.connection.configuration.ConnectionConfiguration;
+import net.lorgen.easydb.connection.pool.RedisConnectionPool;
+import net.lorgen.easydb.connection.pool.SQLConnectionPool;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -13,6 +15,8 @@ import java.util.Map;
 public class ConnectionRegistry {
 
     private static final Map<DatabaseType, Class<? extends ConnectionPool<?>>> POOL_CLASSES = ImmutableMap.<DatabaseType, Class<? extends ConnectionPool<?>>>builder()
+      .put(DatabaseType.SQL, SQLConnectionPool.class)
+      .put(DatabaseType.REDIS, RedisConnectionPool.class)
       .build();
 
     private static ConnectionRegistry instance;
@@ -44,7 +48,7 @@ public class ConnectionRegistry {
     public <T> ConnectionPool<T> getPool(ConnectionConfiguration configuration) {
         return (ConnectionPool<T>) this.poolsByConfiguration.computeIfAbsent(configuration, config -> {
             try {
-                Class<? extends ConnectionPool<T>> poolClass = (Class<? extends ConnectionPool<T>>) POOL_CLASSES.get(config);
+                Class<? extends ConnectionPool<T>> poolClass = (Class<? extends ConnectionPool<T>>) POOL_CLASSES.get(config.getType());
                 Constructor<ConnectionPool<T>> constructor = (Constructor<ConnectionPool<T>>) poolClass.getConstructor(ConnectionConfiguration.class);
 
                 return constructor.newInstance(config);
@@ -55,7 +59,11 @@ public class ConnectionRegistry {
         });
     }
 
-    public void closeAll() {
+    public <T> void registerPool(ConnectionPool<T> pool) {
+        this.poolsByConfiguration.put(pool.getConfiguration(), pool);
+    }
+
+    public void closeAllAndReset() {
         for (ConnectionPool<?> pool : this.poolsByConfiguration.values()) {
             try {
                 pool.close();
@@ -63,5 +71,8 @@ public class ConnectionRegistry {
                 e.printStackTrace();
             }
         }
+
+        this.poolsByConfiguration.clear();
+        this.connectionConfigsByType.clear();
     }
 }

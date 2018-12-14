@@ -22,7 +22,7 @@ public class Query<T> {
 
     public Query(Class<T> typeClass, T instance, FieldValue<T>[] values, QueryRequirement req) {
         this.typeClass = typeClass;
-        this.instance = Optional.of(instance);
+        this.instance = instance == null ? Optional.empty() : Optional.of(instance);
         this.values = values;
         this.req = req;
     }

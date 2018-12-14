@@ -1,19 +1,15 @@
-package net.lorgen.easydb.test.integration.sql;
+package net.lorgen.easydb.test.integration.connection.sql;
 
 import net.lorgen.easydb.DatabaseType;
 import net.lorgen.easydb.SimpleRepository;
 import net.lorgen.easydb.access.sql.SQLConfiguration;
-import net.lorgen.easydb.connection.configuration.ConnectionConfiguration;
 import net.lorgen.easydb.test.TestItem;
 
 public class SQLTestRepository extends SimpleRepository<TestItem> {
 
-
-    private static final ConnectionConfiguration TEST_CONFIG;
     private static final SQLTestRepository instance;
 
     static {
-        TEST_CONFIG = new SQLConfiguration("localhost", "test", "root", "", 3306);
         instance = new SQLTestRepository();
     }
 
@@ -22,6 +18,10 @@ public class SQLTestRepository extends SimpleRepository<TestItem> {
     }
 
     private SQLTestRepository() {
-        super(TEST_CONFIG, "sql_test", TestItem.class, DatabaseType.SQL);
+        super("sql_test", TestItem.class, DatabaseType.SQL);
+    }
+
+    private SQLTestRepository(SQLConfiguration configuration) {
+        super(configuration, "sql_test", TestItem.class, DatabaseType.SQL);
     }
 }

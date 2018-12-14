@@ -17,8 +17,8 @@ public class RedisConnectionPool implements ConnectionPool<Jedis> {
     private final RedisConfiguration configuration;
 
     public RedisConnectionPool(ConnectionConfiguration configuration) {
-        if (!(configuration instanceof SQLConfiguration)) {
-            throw new IllegalArgumentException("Not an SQL configuration!");
+        if (!(configuration instanceof RedisConfiguration)) {
+            throw new IllegalArgumentException("Not a redis configuration!");
         }
 
         RedisConfiguration config = this.configuration = (RedisConfiguration) configuration;

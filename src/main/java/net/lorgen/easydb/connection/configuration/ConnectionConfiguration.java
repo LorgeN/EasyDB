@@ -40,7 +40,7 @@ public abstract class ConnectionConfiguration {
             return true;
         }
 
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof ConnectionConfiguration)) {
             return false;
         }
 
@@ -52,5 +52,13 @@ public abstract class ConnectionConfiguration {
     @Override
     public int hashCode() {
         return Objects.hash(type, options);
+    }
+
+    @Override
+    public String toString() {
+        return "ConnectionConfiguration{" +
+          "type=" + type +
+          ", options=" + options +
+          '}';
     }
 }

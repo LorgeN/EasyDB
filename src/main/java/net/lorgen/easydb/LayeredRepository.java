@@ -1,5 +1,6 @@
 package net.lorgen.easydb;
 
+import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.query.Query;
 import net.lorgen.easydb.response.Response;
@@ -22,6 +23,11 @@ public class LayeredRepository<T> implements ItemRepository<T> {
 
     public ItemRepository<T>[] getLayers() {
         return layers;
+    }
+
+    @Override
+    public boolean isSearchable(PersistentField<T> field) {
+        return false;
     }
 
     @Override
