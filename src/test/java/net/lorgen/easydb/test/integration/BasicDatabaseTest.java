@@ -96,6 +96,25 @@ public class BasicDatabaseTest {
             // Assert that no such item exists
             assertThat(found.isEmpty()).isTrue();
 
+            // Make some local changes
+            item.setEmail(this.randomString());
+            item.setLastName(this.randomString());
+
+            // Save it
+            repository.newQuery()
+              .set(item)
+              .saveSync();
+
+            // Fetch the new value from the database
+            found = repository.newQuery()
+              .where().keysAre(item)
+              .closeAll().findFirstSync();
+
+            // Assert that we found something
+            assertThat(found.isEmpty()).isFalse();
+            // Assert that it was actually updated
+            assertThat(found.getInstance()).isEqualTo(item);
+
             // Delete the item
             repository.newQuery().where().keysAre(item).closeAll().deleteSync();
 
