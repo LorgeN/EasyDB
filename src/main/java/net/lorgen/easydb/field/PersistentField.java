@@ -3,8 +3,8 @@ package net.lorgen.easydb.field;
 import net.lorgen.easydb.DataType;
 import net.lorgen.easydb.Index;
 import net.lorgen.easydb.ItemRepository;
+import net.lorgen.easydb.Key;
 import net.lorgen.easydb.Persist;
-import net.lorgen.easydb.StorageKey;
 import net.lorgen.easydb.interact.external.External;
 import net.lorgen.easydb.interact.join.Join;
 import org.apache.commons.lang3.StringUtils;
@@ -121,7 +121,7 @@ public class PersistentField<T> {
             }
         }
 
-        StorageKey keyAnnot = field.getAnnotation(StorageKey.class);
+        Key keyAnnot = field.getAnnotation(Key.class);
         if (keyAnnot == null) {
             return; // Not a storage key
         }

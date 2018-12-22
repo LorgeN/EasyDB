@@ -3,8 +3,8 @@ package net.lorgen.easydb.field;
 import net.lorgen.easydb.DataType;
 import net.lorgen.easydb.Index;
 import net.lorgen.easydb.ItemRepository;
+import net.lorgen.easydb.Key;
 import net.lorgen.easydb.Persist;
-import net.lorgen.easydb.StorageKey;
 import net.lorgen.easydb.interact.external.External;
 import net.lorgen.easydb.interact.join.Join;
 import org.apache.commons.lang3.StringUtils;
@@ -98,7 +98,7 @@ public class FieldBuilder<T> {
         this.setJoinOn(field);
         this.setTable(field);
 
-        StorageKey keyAnnot = field.getAnnotation(StorageKey.class);
+        Key keyAnnot = field.getAnnotation(Key.class);
         if (keyAnnot == null) {
             return this; // Not a storage key
         }
@@ -225,9 +225,9 @@ public class FieldBuilder<T> {
     }
 
     /**
-     * Sets this field to be used as a {@link StorageKey key}
+     * Sets this field to be used as a {@link Key key}
      *
-     * @param value If this field should be a {@link StorageKey key}
+     * @param value If this field should be a {@link Key key}
      * @return This
      */
     public FieldBuilder<T> setAsKey(boolean value) {

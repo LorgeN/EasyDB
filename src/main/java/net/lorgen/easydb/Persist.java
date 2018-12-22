@@ -18,7 +18,7 @@ import java.util.Map;
  * because we wish to have the option to easily provide certain information
  * along with the field, this approach is more suitable.
  *
- * @see StorageKey
+ * @see Key
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)

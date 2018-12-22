@@ -82,6 +82,10 @@ public class Repositories {
     }
 
     public static <G, T extends ItemRepository<G>> T createRepository(ConnectionConfiguration config, DatabaseType type, String table, Class<G> typeClass, Class<T> repoClass, ItemProfile<T> profile) {
+        if (type == null && config != null) {
+            type = config.getType();
+        }
+
         boolean hasType = type != null, hasTable = table != null, hasTypeClass = typeClass != null, hasConfig = config != null, hasProfile = profile != null;
 
         // Special case if the repo class is not given, as we the can not iterate through the constructors

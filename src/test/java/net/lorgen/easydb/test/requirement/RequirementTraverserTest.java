@@ -8,7 +8,7 @@ import net.lorgen.easydb.query.req.RequirementBuilder;
 import net.lorgen.easydb.query.req.SimpleRequirement;
 import net.lorgen.easydb.query.traverse.RequirementCase;
 import net.lorgen.easydb.query.traverse.RequirementTraverser;
-import net.lorgen.easydb.test.TestItem;
+import net.lorgen.easydb.test.item.TestItem;
 import net.lorgen.easydb.util.reflection.UtilField;
 import org.junit.Test;
 import org.junit.runner.RunWith;

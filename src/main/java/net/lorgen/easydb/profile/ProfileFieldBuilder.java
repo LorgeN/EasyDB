@@ -3,8 +3,8 @@ package net.lorgen.easydb.profile;
 import net.lorgen.easydb.DataType;
 import net.lorgen.easydb.Index;
 import net.lorgen.easydb.ItemRepository;
+import net.lorgen.easydb.Key;
 import net.lorgen.easydb.Persist;
-import net.lorgen.easydb.StorageKey;
 import net.lorgen.easydb.field.FieldBuilder;
 import net.lorgen.easydb.field.FieldSerializer;
 import net.lorgen.easydb.field.PersistentField;
@@ -145,9 +145,9 @@ public class ProfileFieldBuilder<T> {
     }
 
     /**
-     * Sets this field to be used as a {@link StorageKey key}
+     * Sets this field to be used as a {@link Key key}
      *
-     * @param value If this field should be a {@link StorageKey key}
+     * @param value If this field should be a {@link Key key}
      * @return This
      */
     public ProfileFieldBuilder<T> setAsKey(boolean value) {

@@ -19,7 +19,7 @@ import java.lang.reflect.Field;
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface StorageKey {
+public @interface Key {
 
     /**
      * If this field should automatically increment by 1 for every
@@ -28,7 +28,7 @@ public @interface StorageKey {
      * <p>
      * The annotated field must be of {@link DataType type}
      * {@link DataType#INTEGER integer}, and be the <b>only</b> field
-     * annotated with {@link StorageKey this annotation}.
+     * annotated with {@link Key this annotation}.
      *
      * @return If this field should automatically increment by 1 when
      * creating a new entry in the database

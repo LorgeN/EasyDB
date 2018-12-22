@@ -4,7 +4,7 @@ import com.google.common.collect.Lists;
 import net.lorgen.easydb.DataType;
 import net.lorgen.easydb.field.FieldSerializer;
 import net.lorgen.easydb.field.PersistentField;
-import net.lorgen.easydb.test.TestItem;
+import net.lorgen.easydb.test.item.TestItem;
 import net.lorgen.easydb.util.reflection.UtilField;
 import org.junit.Test;
 import org.junit.runner.RunWith;

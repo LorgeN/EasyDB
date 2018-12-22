@@ -3,7 +3,7 @@ package net.lorgen.easydb.test.profile;
 import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.WrappedIndex;
-import net.lorgen.easydb.test.TestItem;
+import net.lorgen.easydb.test.item.TestItem;
 import net.lorgen.easydb.util.reflection.UtilField;
 import org.junit.Test;
 

@@ -4,7 +4,7 @@ import com.google.common.collect.Lists;
 import net.lorgen.easydb.DataType;
 import net.lorgen.easydb.DatabaseType;
 import net.lorgen.easydb.ItemRepository;
-import net.lorgen.easydb.StorageKey;
+import net.lorgen.easydb.Key;
 import net.lorgen.easydb.access.ListenableTypeAccessor;
 import net.lorgen.easydb.event.Listener;
 import net.lorgen.easydb.field.PersistentField;
@@ -34,7 +34,7 @@ public abstract class FieldHandle<T> implements Listener {
 
     protected boolean hasKeys(Class<?> typeClass) {
         for (Field declaredField : typeClass.getDeclaredFields()) {
-            if (!declaredField.isAnnotationPresent(StorageKey.class)) {
+            if (!declaredField.isAnnotationPresent(Key.class)) {
                 continue;
             }
 

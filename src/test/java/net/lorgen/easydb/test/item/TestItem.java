@@ -1,18 +1,16 @@
-package net.lorgen.easydb.test;
+package net.lorgen.easydb.test.item;
 
 import net.lorgen.easydb.DeserializerConstructor;
 import net.lorgen.easydb.Index;
+import net.lorgen.easydb.Key;
 import net.lorgen.easydb.Persist;
-import net.lorgen.easydb.StorageKey;
 import net.lorgen.easydb.StoredItem;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-import java.beans.ConstructorProperties;
-
 public class TestItem implements StoredItem {
 
-    @StorageKey(autoIncrement = true)
+    @Key(autoIncrement = true)
     private int id;
 
     @Persist(name = "name", size = 24)
