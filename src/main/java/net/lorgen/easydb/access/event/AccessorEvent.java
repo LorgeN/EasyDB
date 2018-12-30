@@ -4,11 +4,9 @@ import net.lorgen.easydb.access.DatabaseTypeAccessor;
 import net.lorgen.easydb.event.Event;
 
 /**
- * An event.
- *
- * @param <T> This event as a type (E. g. {@code ExampleEvent extends Event<ExampleEvent>})
+ * An event
  */
-public abstract class AccessorEvent<T extends AccessorEvent<T>> extends Event<T> {
+public abstract class AccessorEvent extends Event {
 
     private DatabaseTypeAccessor<?> accessor;
 

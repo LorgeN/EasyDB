@@ -85,7 +85,7 @@ public interface ItemRepository<T> {
     default void deleteAsync(T object) {
         this.deleteAsync(this.newQuery()
           .where()
-          .andKeysAre(object)
+          .andKeysAreSameAs(object)
           .closeAll()
           .build());
     }
@@ -108,7 +108,7 @@ public interface ItemRepository<T> {
     default void deleteSync(T object) {
         this.deleteSync(this.newQuery()
           .where()
-          .andKeysAre(object)
+          .andKeysAreSameAs(object)
           .closeAll()
           .build());
     }

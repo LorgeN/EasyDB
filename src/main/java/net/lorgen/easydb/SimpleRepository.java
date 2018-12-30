@@ -24,10 +24,15 @@ public class SimpleRepository<T> implements DatabaseRepository<T> {
 
     @RepositoryConstructor({RepositoryOption.CONFIG, RepositoryOption.TABLE, RepositoryOption.TYPE, RepositoryOption.DATABASE})
     public SimpleRepository(ConnectionConfiguration configuration, String tableName, Class<T> typeClass, DatabaseType type) {
+        this(configuration, tableName, new ItemProfile<>(typeClass), type);
+    }
+
+    @RepositoryConstructor({RepositoryOption.CONFIG, RepositoryOption.TABLE, RepositoryOption.TYPE, RepositoryOption.DATABASE})
+    public SimpleRepository(ConnectionConfiguration configuration, String tableName, ItemProfile<T> profile, DatabaseType type) {
         this.tableName = tableName;
         this.type = type;
 
-        this.profile = new ItemProfile<>(typeClass);
+        this.profile = profile;
         this.accessor = type.newAccessor(configuration, this, this.tableName);
 
         Repositories.registerRepository(this);
@@ -35,13 +40,7 @@ public class SimpleRepository<T> implements DatabaseRepository<T> {
 
     @RepositoryConstructor({RepositoryOption.TABLE, RepositoryOption.TYPE, RepositoryOption.DATABASE})
     public SimpleRepository(String tableName, Class<T> typeClass, DatabaseType type) {
-        this.tableName = tableName;
-        this.type = type;
-
-        this.profile = new ItemProfile<>(typeClass);
-        this.accessor = type.newAccessor(this, this.tableName);
-
-        Repositories.registerRepository(this);
+        this(tableName, new ItemProfile<>(typeClass), type);
     }
 
     @RepositoryConstructor({RepositoryOption.TABLE, RepositoryOption.PROFILE, RepositoryOption.DATABASE})

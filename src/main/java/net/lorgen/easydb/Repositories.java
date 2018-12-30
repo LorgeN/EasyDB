@@ -82,27 +82,27 @@ public class Repositories {
     }
 
     public static <G, T extends ItemRepository<G>> T createRepository(ConnectionConfiguration config, DatabaseType type, String table, Class<G> typeClass, Class<T> repoClass, ItemProfile<T> profile) {
+        Constructor[] constructors;
+        // Special case if the repo class is not given, as we the can not iterate through the constructors
+        if (repoClass == null || repoClass.equals(ItemRepository.class)) {
+            // This is the most generic we can get (As every repo has to be an ItemRepository), so instead of making
+            // large, annoying boolean statements everywhere we just set it to null right away
+            constructors = SimpleRepository.class.getDeclaredConstructors();
+        } else {
+            constructors = repoClass.getDeclaredConstructors();
+        }
+
         if (type == null && config != null) {
             type = config.getType();
         }
 
         boolean hasType = type != null, hasTable = table != null, hasTypeClass = typeClass != null, hasConfig = config != null, hasProfile = profile != null;
 
-        // Special case if the repo class is not given, as we the can not iterate through the constructors
-        if (repoClass == null) {
-            if (!hasType || !hasTable || !hasTypeClass) {
-                throw new IllegalArgumentException("Not enough arguments given to create repository!");
-            }
-
-            // Assume it's a simple repository in this case
-            return (T) new SimpleRepository<>(table, typeClass, type);
-        }
-
         // We now know for sure that the repo class is not null, and can iterate through constructors
         // looking for a suitable one to use given the parameters we have
         constLoop:
-        for (Constructor<?> constructor : repoClass.getConstructors()) {
-            RepositoryConstructor data = constructor.getAnnotation(RepositoryConstructor.class);
+        for (Constructor constructor : constructors) {
+            RepositoryConstructor data = (RepositoryConstructor) constructor.getAnnotation(RepositoryConstructor.class);
             if (data == null) {
                 continue;
             }

@@ -22,7 +22,7 @@ import java.util.Map;
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Persist {
+public @interface Options {
 
     /**
      * @return The name of this field. If left empty, the name of the annotated

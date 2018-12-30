@@ -13,7 +13,9 @@ import net.lorgen.easydb.profile.ItemProfileBuilder;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 public abstract class FieldHandle<T> implements Listener {
 
@@ -52,7 +54,7 @@ public abstract class FieldHandle<T> implements Listener {
         ItemProfileBuilder<E> profileBuilder = this.createWithLocalKeys(typeClass);
 
         // This should be the most common case
-        if (DataType.resolve(additionalKey) != null) {
+        if (this.isPrimitive(additionalKey)) {
             profileBuilder.newField()
               .setName(KEY_FIELD)
               .setTypeClass(additionalKey)
@@ -78,14 +80,18 @@ public abstract class FieldHandle<T> implements Listener {
         ItemProfileBuilder<E> profileBuilder = new ItemProfileBuilder<>(typeClass);
 
         for (PersistentField<T> key : this.accessor.getProfile().getKeys()) {
-            profileBuilder.newField().copyAttributes(key).setAsKey(true).buildAndAddField();
+            // Hopefully no one uses max val integer as index ID :)
+            profileBuilder.newField().copyAttributes(key)
+              .setAsKey(true)
+              .setIndex(true).setIndexIds(Integer.MAX_VALUE)
+              .buildAndAddField();
         }
 
         return profileBuilder;
     }
 
     protected <E> ItemProfile<E> complete(Class<E> typeClass, ItemProfileBuilder<E> profileBuilder) {
-        if (DataType.resolve(typeClass) != null) {
+        if (this.isPrimitive(typeClass)) {
             profileBuilder.newField()
               .setName(VALUE_FIELD)
               .setTypeClass(this.field.getTypeClass())
@@ -158,6 +164,10 @@ public abstract class FieldHandle<T> implements Listener {
     }
 
     protected boolean isPrimitive(Class<?> typeClass) {
+        if (Collection.class.isAssignableFrom(typeClass) || Map.class.isAssignableFrom(typeClass)) {
+            return false;
+        }
+
         return DataType.resolve(typeClass) != null;
     }
 

@@ -55,7 +55,7 @@ public class ExternalFieldOtherKeyHandle<T> extends OtherKeyHandle<T> {
 
     @EventHandler
     public void onSave(AccessorSaveEvent event) {
-        if (!this.getField().isTransient()) {
+        if (this.getField().isTransient()) {
             return;
         }
 
@@ -65,7 +65,7 @@ public class ExternalFieldOtherKeyHandle<T> extends OtherKeyHandle<T> {
 
     @EventHandler
     public void onDelete(AccessorDeleteEvent event) {
-        if (!this.getField().isTransient()) {
+        if (this.getField().isTransient()) {
             return;
         }
 

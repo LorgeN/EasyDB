@@ -7,18 +7,10 @@ import java.util.List;
 
 public class HandlerList<T> {
 
-    private static final List<HandlerList<?>> HANDLER_LISTS = Lists.newArrayList();
+    private List<RegisteredListener<? super T>> listeners;
 
     public HandlerList() {
         this.listeners = Lists.newArrayList();
-
-        HANDLER_LISTS.add(this);
-    }
-
-    private List<RegisteredListener<? super T>> listeners;
-
-    public static void unregister(Listener listener) {
-        HANDLER_LISTS.forEach(list -> list.getListeners().removeIf(regList -> regList.getListener() == listener));
     }
 
     public List<RegisteredListener<? super T>> getListeners() {

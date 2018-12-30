@@ -30,7 +30,7 @@ public enum DataType implements FieldSerializer {
      * used to figure out which {@link DataType type} should actually be
      * used.
      * <p>
-     * This is used as the default type in the {@link Persist} annotation,
+     * This is used as the default type in the {@link Options} annotation,
      * and in most cases should be fine to use.
      */
     AUTO() {
@@ -142,7 +142,7 @@ public enum DataType implements FieldSerializer {
      */
 
     /**
-     * A {@link List}. Requires a {@link Persist#typeParams()} value for the type
+     * A {@link List}. Requires a {@link Options#typeParams()} value for the type
      * parameter of the list. Requires the value to be serializable using {@link Gson GSON}.
      */
     LIST(List.class) {
@@ -184,7 +184,7 @@ public enum DataType implements FieldSerializer {
         }
     },
     /**
-     * A {@link Set}. Requires a {@link Persist#typeParams()} value for the type
+     * A {@link Set}. Requires a {@link Options#typeParams()} value for the type
      * parameter of the set. Requires the value to be serializable using {@link Gson GSON}.
      */
     SET(Set.class) {
@@ -262,7 +262,7 @@ public enum DataType implements FieldSerializer {
         }
     },
     /**
-     * A {@link Map}. Requires two {@link Persist#typeParams()}, where the first one corresponds
+     * A {@link Map}. Requires two {@link Options#typeParams()}, where the first one corresponds
      * to the key {@link Type type} of the map, and the second corresponds to the value type. Both
      * types are required to be serializable using {@link Gson GSON}.
      */
@@ -338,7 +338,7 @@ public enum DataType implements FieldSerializer {
      * slower compared to using this enum, but allows for a lot of flexibility.
      * <p>
      * Simply implement {@link FieldSerializer} in a class, leave a no-args constructor
-     * and specify it using the {@link Persist#serializer()} field.
+     * and specify it using the {@link Options#serializer()} field.
      */
     CUSTOM() {
         @Override

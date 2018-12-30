@@ -30,9 +30,6 @@ public class BasicDatabaseIT {
 
     @Test
     public void testBasicOperations() {
-        ConnectionRegistry registry = ConnectionRegistry.getInstance();
-        registry.registerConfiguration(this.configuration);
-
         ItemRepository<TestItem> repository = Repositories.createRepository(this.configuration, null, "basic_test", TestItem.class, null, null);
 
         assertThat(repository).isNotNull();
@@ -45,7 +42,7 @@ public class BasicDatabaseIT {
 
             // Try fetching the item
             Response<TestItem> found = repository.newQuery()
-              .where().keysAre(item)
+              .where().keysAreSameAs(item)
               .closeAll().findFirstSync();
 
             // Verify we actually found something
@@ -61,7 +58,7 @@ public class BasicDatabaseIT {
             // Update the value in the database
             repository.newQuery()
               .set("username", newUsername)
-              .where().keysAre(item).closeAll()
+              .where().keysAreSameAs(item).closeAll()
               .saveSync();
 
             // Update the local instance
@@ -69,7 +66,7 @@ public class BasicDatabaseIT {
 
             // Fetch the new value from the database
             found = repository.newQuery()
-              .where().keysAre(item)
+              .where().keysAreSameAs(item)
               .closeAll().findFirstSync();
 
             // Assert that we found something
@@ -96,7 +93,7 @@ public class BasicDatabaseIT {
 
             // Fetch the new value from the database
             found = repository.newQuery()
-              .where().keysAre(item)
+              .where().keysAreSameAs(item)
               .closeAll().findFirstSync();
 
             // Assert that we found something
@@ -105,11 +102,11 @@ public class BasicDatabaseIT {
             assertThat(found.getInstance()).isEqualTo(item);
 
             // Delete the item
-            repository.newQuery().where().keysAre(item).closeAll().deleteSync();
+            repository.newQuery().where().keysAreSameAs(item).closeAll().deleteSync();
 
             // Try to find it again
             found = repository.newQuery()
-              .where().keysAre(item)
+              .where().keysAreSameAs(item)
               .closeAll().findFirstSync();
 
             // Assert that nothing was found
@@ -134,7 +131,7 @@ public class BasicDatabaseIT {
     private List<TestItem> getTestItems() {
         List<TestItem> list = Lists.newArrayList();
         for (int i = 0; i < 10; i++) {
-            list.add(new TestItem(this.randomString(), this.randomString(), this.randomString(), this.randomString(), i + 5 * 4));
+            list.add(TestItem.getRandom());
         }
 
         return list;

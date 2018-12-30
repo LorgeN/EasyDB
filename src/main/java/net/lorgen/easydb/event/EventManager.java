@@ -1,15 +1,23 @@
 package net.lorgen.easydb.event;
 
-import java.lang.reflect.InvocationTargetException;
+import com.google.common.collect.Maps;
+
 import java.lang.reflect.Method;
+import java.util.Map;
 
 /**
  * Simple event system manager for a database accessor
  */
 public class EventManager {
 
-    public <T extends Event<T>> void callEvent(T event) {
-        HandlerList<T> handlerList = event.getHandlers();
+    private Map<Class<? extends Event>, HandlerList<?>> handlerListMap;
+
+    public EventManager() {
+        this.handlerListMap = Maps.newHashMap();
+    }
+
+    public <T extends Event> void callEvent(T event) {
+        HandlerList<T> handlerList = (HandlerList<T>) this.handlerListMap.computeIfAbsent(event.getClass(), eClass -> new HandlerList<>());
         handlerList.call(event);
     }
 
@@ -39,25 +47,12 @@ public class EventManager {
                 throw new ListenerRegisterException(method.getName() + " doesn't have 1 argument!");
             }
 
-            try {
-                HandlerList<?> handlerList = this.getHandlerList(classes[0]);
-                int priority = annotation.priority();
+            HandlerList handlerList = this.handlerListMap.computeIfAbsent((Class<? extends Event>) classes[0], eClass -> new HandlerList<>());
+            int priority = annotation.priority();
 
-                RegisteredListener registeredListener = new RegisteredListener<>(listener, priority, method);
+            RegisteredListener registeredListener = new RegisteredListener<>(listener, priority, method);
 
-                handlerList.addListener(registeredListener);
-            } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-                throw new ListenerRegisterException("An error occurred while parsing " + method.getName() + " for listener " + listener.getClass().getSimpleName() + "!", e);
-            }
+            handlerList.addListener(registeredListener);
         }
-    }
-
-    public <T> HandlerList<T> getHandlerList(Class<T> eventClass) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        if (!Event.class.isAssignableFrom(eventClass)) {
-            throw new IllegalArgumentException(eventClass.getSimpleName() + " isn't an event!");
-        }
-
-        Method method = eventClass.getDeclaredMethod("getHandlerList");
-        return (HandlerList<T>) method.invoke(null);
     }
 }

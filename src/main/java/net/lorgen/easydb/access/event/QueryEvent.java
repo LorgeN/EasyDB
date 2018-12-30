@@ -3,7 +3,7 @@ package net.lorgen.easydb.access.event;
 import net.lorgen.easydb.access.DatabaseTypeAccessor;
 import net.lorgen.easydb.query.Query;
 
-public abstract class QueryEvent<T extends QueryEvent<T>> extends AccessorEvent<T> {
+public abstract class QueryEvent extends AccessorEvent {
 
     private Query<?> query;
 

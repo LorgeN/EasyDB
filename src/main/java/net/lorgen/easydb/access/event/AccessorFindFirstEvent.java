@@ -5,9 +5,7 @@ import net.lorgen.easydb.event.HandlerList;
 import net.lorgen.easydb.query.Query;
 import net.lorgen.easydb.response.Response;
 
-public class AccessorFindFirstEvent extends QueryEvent<AccessorFindFirstEvent> {
-
-    private static final HandlerList<AccessorFindFirstEvent> HANDLER_LIST = new HandlerList<>();
+public class AccessorFindFirstEvent extends QueryEvent {
 
     private Response<?> response;
 
@@ -18,14 +16,5 @@ public class AccessorFindFirstEvent extends QueryEvent<AccessorFindFirstEvent> {
 
     public Response<?> getResponse() {
         return response;
-    }
-
-    @Override
-    public HandlerList<AccessorFindFirstEvent> getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList<AccessorFindFirstEvent> getHandlerList() {
-        return HANDLER_LIST;
     }
 }

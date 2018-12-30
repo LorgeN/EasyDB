@@ -14,7 +14,7 @@ import java.lang.reflect.Field;
  * given values, only 1 result will ever be returned. In other words,
  * that combination is <b>unique</b>.
  * <p>
- * The field is also <b>required</b> to have the {@link Persist}
+ * The field is also <b>required</b> to have the {@link Options}
  * annotation.
  */
 @Target(ElementType.FIELD)

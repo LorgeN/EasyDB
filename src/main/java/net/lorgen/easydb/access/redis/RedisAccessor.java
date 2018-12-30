@@ -27,6 +27,7 @@ import net.lorgen.easydb.query.req.SimpleRequirement;
 import net.lorgen.easydb.query.traverse.RequirementCase;
 import net.lorgen.easydb.query.traverse.RequirementTraverser;
 import net.lorgen.easydb.response.Response;
+import org.apache.commons.lang3.Validate;
 import redis.clients.jedis.Jedis;
 
 import java.util.Arrays;
@@ -47,11 +48,11 @@ public class RedisAccessor<T> extends ListenableTypeAccessor<T> {
     /**
      * The format of the key in the Redis database
      */
-    private static final String AUTO_INCREMENT_FORMAT = "auto_increment:%s";
+    private static final String AUTO_INCREMENT_FORMAT = "%s:auto_increment";
 
-    private static final String INDEX_HASH_FORMAT = "index:%s(fields[%s])";
+    private static final String INDEX_HASH_FORMAT = "%s:index:(fields[%s])";
 
-    private static final String STORE_FORMAT = "%s(%s)";
+    private static final String STORE_FORMAT = "%s:value(%s)";
 
     /*
      * Notes
@@ -206,6 +207,10 @@ public class RedisAccessor<T> extends ListenableTypeAccessor<T> {
 
         String[] keys = this.getKeys(query.getRequirement()).toArray(new String[0]);
 
+        if (keys.length == 0) {
+            return;
+        }
+
         try (Jedis jedis = this.getResource()) {
             jedis.del(keys);
         } catch (Throwable t) {
@@ -352,7 +357,7 @@ public class RedisAccessor<T> extends ListenableTypeAccessor<T> {
 
         for (PersistentField<T> key : keys) {
             if (!builder.toString().isEmpty()) {
-                builder.append(":");
+                builder.append(".");
             }
 
             Object value = this.repository.getArrayValue(key, values);
@@ -460,6 +465,15 @@ public class RedisAccessor<T> extends ListenableTypeAccessor<T> {
         }
 
         if (usedFields.size() != fields.length) {
+            System.out.println();
+            System.out.println("ERROR START!");
+            System.out.println();
+            System.out.println(usedFields);
+            System.out.println();
+            System.out.println();
+            System.out.println(Arrays.toString(values));
+            System.out.println();
+
             throw new IllegalArgumentException("Attempted query on un-indexed field!");
         }
 
@@ -551,7 +565,7 @@ public class RedisAccessor<T> extends ListenableTypeAccessor<T> {
         StringBuilder builder = new StringBuilder();
         for (PersistentField<T> field : fields) {
             if (!builder.toString().isEmpty()) {
-                builder.append(":");
+                builder.append(".");
             }
 
             builder.append(field.getName());

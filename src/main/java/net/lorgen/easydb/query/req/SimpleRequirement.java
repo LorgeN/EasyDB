@@ -15,7 +15,7 @@ public class SimpleRequirement implements QueryRequirement {
         this.field = field;
         this.operator = operator;
         if (!this.field.getType().matches(value.getClass())) {
-            throw new IllegalArgumentException("Not a valid value!");
+            throw new IllegalArgumentException("Not a valid value! Field: " + field + ", operator: " + operator.name() + ", value: " + value);
         }
 
         this.value = value;

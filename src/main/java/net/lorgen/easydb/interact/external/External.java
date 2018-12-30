@@ -23,7 +23,7 @@ public @interface External {
     /**
      * @return The table this field's value is stored in
      */
-    String table() default "";
+    String table();
 
     /**
      * @return The class of the {@link ItemRepository} this field's value is
@@ -34,7 +34,7 @@ public @interface External {
     /**
      * @return If we should store the key(s) of the object as a local field.
      */
-    boolean saveKeyLocally() default true;
+    boolean saveKeyLocally() default false;
 
     /**
      * @return The local field(s) to use as keys when finding external object(s).

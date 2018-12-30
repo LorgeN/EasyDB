@@ -1,6 +1,5 @@
 package net.lorgen.easydb.event;
 
-public abstract class Event<T extends Event<T>> {
+public abstract class Event {
 
-    public abstract HandlerList<T> getHandlers();
 }

@@ -7,9 +7,7 @@ import net.lorgen.easydb.response.Response;
 
 import java.util.List;
 
-public class AccessorFindAllEvent extends QueryEvent<AccessorFindAllEvent> {
-
-    private static final HandlerList<AccessorFindAllEvent> HANDLER_LIST = new HandlerList<>();
+public class AccessorFindAllEvent extends QueryEvent {
 
     private List<Response<?>> responses;
 
@@ -20,14 +18,5 @@ public class AccessorFindAllEvent extends QueryEvent<AccessorFindAllEvent> {
 
     public List<Response<?>> getResponses() {
         return responses;
-    }
-
-    @Override
-    public HandlerList<AccessorFindAllEvent> getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList<AccessorFindAllEvent> getHandlerList() {
-        return HANDLER_LIST;
     }
 }

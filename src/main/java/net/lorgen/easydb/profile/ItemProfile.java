@@ -5,6 +5,7 @@ import com.google.common.collect.Maps;
 import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.WrappedIndex;
 import net.lorgen.easydb.interact.join.JoinWrapper;
+import org.apache.commons.lang3.Validate;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -28,6 +29,14 @@ public class ItemProfile<T> {
     public ItemProfile(Class<T> typeClass, PersistentField<T>[] keys, PersistentField<T>[] fields,
                        PersistentField<T>[] storedFields, PersistentField<T> autoIncrementField,
                        WrappedIndex<T>[] indices, WrappedIndex<T>[] uniqueIndices, JoinWrapper[] joins) {
+        Validate.notNull(typeClass);
+        Validate.notNull(keys);
+        Validate.notNull(fields);
+        Validate.notNull(storedFields);
+        Validate.notNull(indices);
+        Validate.notNull(uniqueIndices);
+        Validate.notNull(joins);
+
         this.typeClass = typeClass;
         this.keys = keys;
         this.fields = fields;
@@ -47,7 +56,7 @@ public class ItemProfile<T> {
         for (Field field : typeClass.getDeclaredFields()) {
             // This one really doesn't need a lot of explanation
             // (Unless you don't know what transient is, in that case GOOGLE IT)
-            if (Modifier.isTransient(field.getModifiers())) {
+            if (Modifier.isTransient(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
                 continue;
             }
 
@@ -89,6 +98,7 @@ public class ItemProfile<T> {
           .toArray(PersistentField[]::new);
         if (indices.length == 0) {
             this.indices = new WrappedIndex[0];
+            this.uniqueIndices = new WrappedIndex[0];
             return;
         }
 
@@ -127,7 +137,7 @@ public class ItemProfile<T> {
 
     public PersistentField<T> resolveField(String name) {
         return Arrays.stream(this.fields)
-          .filter(field -> field.getName().equals(name) || field.getField().getName().equals(name)) // Case-sensitive
+          .filter(field -> field.getName().equals(name) || (field.getField() != null && field.getField().getName().equals(name))) // Case-sensitive
           .findFirst().orElse(null);
     }
 
@@ -142,7 +152,7 @@ public class ItemProfile<T> {
     }
 
     public boolean areKeys(PersistentField<T>... fields) {
-        return Arrays.stream(fields).allMatch(this::isKey);
+        return fields.length == this.keys.length && Arrays.stream(fields).allMatch(this::isKey);
     }
 
     public WrappedIndex<T> getIndex(PersistentField<T>... fields) {

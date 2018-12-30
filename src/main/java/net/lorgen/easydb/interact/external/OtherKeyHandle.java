@@ -8,6 +8,7 @@ import net.lorgen.easydb.query.Query;
 import net.lorgen.easydb.query.QueryBuilder;
 import net.lorgen.easydb.query.req.RequirementBuilder;
 import net.lorgen.easydb.response.Response;
+import org.apache.commons.lang3.Validate;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -20,7 +21,10 @@ public abstract class OtherKeyHandle<T> extends FieldHandle<T> {
     }
 
     public void save(Query<T> baseQuery) {
-        this.save(baseQuery, baseQuery.getValue(this.getField()).getValue());
+        Validate.notNull(baseQuery);
+
+        Object value = baseQuery.getValue(this.getField()).getValue();
+        this.save(baseQuery, value);
     }
 
     public void save(Query<T> baseQuery, Object fieldValue) {
@@ -75,7 +79,7 @@ public abstract class OtherKeyHandle<T> extends FieldHandle<T> {
                 builder.andEquals(key, baseQuery.getValue(key).getValue());
             }
         } else {
-            builder.keysAre(baseQuery.getValue(this.getField()).getValue());
+            builder.keysAreSameAs(baseQuery.getValue(this.getField()).getValue());
         }
 
         builder.closeAll().deleteSync();

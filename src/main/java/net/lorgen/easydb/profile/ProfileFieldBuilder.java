@@ -4,7 +4,7 @@ import net.lorgen.easydb.DataType;
 import net.lorgen.easydb.Index;
 import net.lorgen.easydb.ItemRepository;
 import net.lorgen.easydb.Key;
-import net.lorgen.easydb.Persist;
+import net.lorgen.easydb.Options;
 import net.lorgen.easydb.field.FieldBuilder;
 import net.lorgen.easydb.field.FieldSerializer;
 import net.lorgen.easydb.field.PersistentField;
@@ -56,7 +56,7 @@ public class ProfileFieldBuilder<T> {
     }
 
     /**
-     * Takes the data from the field, ether from the {@link Persist} annotation if
+     * Takes the data from the field, ether from the {@link Options} annotation if
      * present, or based on assumptions, and sets the values in this builder
      *
      * @param field The {@link Field field}

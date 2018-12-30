@@ -245,9 +245,9 @@ public class RequirementBuilder<T> {
         return this.or(new SimpleRequirement(field, Operator.EQUALS, value));
     }
 
-    //
+    // Slightly different naming to avoid some varargs fun
 
-    public RequirementBuilder<T> keysAre(T object) {
+    public RequirementBuilder<T> keysAreSameAs(T object) {
         PersistentField<T>[] keys = this.manager.getProfile().getKeys();
         // We have to move down 1 level since we wish to wrap it
         RequirementBuilder<T> down = this.open();
@@ -259,7 +259,7 @@ public class RequirementBuilder<T> {
         return down.closeCurrent(); // Returns this
     }
 
-    public RequirementBuilder<T> andKeysAre(T object) {
+    public RequirementBuilder<T> andKeysAreSameAs(T object) {
         PersistentField<T>[] keys = this.manager.getProfile().getKeys();
         // We have to move down 1 level since we wish to wrap it
         RequirementBuilder<T> down = this.andOpen();
@@ -271,7 +271,7 @@ public class RequirementBuilder<T> {
         return down.closeCurrent(); // Returns this
     }
 
-    public RequirementBuilder<T> orKeysAre(T object) {
+    public RequirementBuilder<T> orKeysAreSameAs(T object) {
         PersistentField<T>[] keys = this.manager.getProfile().getKeys();
         // We have to move down 1 level since we wish to wrap it
         RequirementBuilder<T> down = this.orOpen();

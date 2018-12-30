@@ -13,6 +13,7 @@ import net.lorgen.easydb.event.EventHandler;
 import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.query.Query;
+import net.lorgen.easydb.query.req.RequirementBuilder;
 import net.lorgen.easydb.response.Response;
 
 import java.util.Collection;
@@ -99,6 +100,18 @@ public class ExternalCollectionOtherKeyHandle<T> extends OtherKeyHandle<T> {
     }
 
     // Internals
+
+    public void delete(Query<T> baseQuery) {
+        if (this.useAddedKeys()) {
+            super.delete(baseQuery);
+            return;
+        }
+
+        Collection<?> collection = (Collection<?>) baseQuery.getValue(this.getField()).getValue();
+        for (Object o : collection) {
+            ((RequirementBuilder) this.getRepository().newQuery().where()).keysAreSameAs(o).closeAll().deleteSync();
+        }
+    }
 
     private Collection<?> newInstance() {
         Class<? extends Collection> typeClass = (Class<? extends Collection>) this.getField().getTypeClass();

@@ -6,6 +6,7 @@ import net.lorgen.easydb.WrappedIndex;
 import net.lorgen.easydb.field.FieldBuilder;
 import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.interact.join.JoinWrapper;
+import org.apache.commons.lang3.Validate;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -35,10 +36,13 @@ public class ItemProfileBuilder<T> {
 
     public ItemProfileBuilder<T> fromClass(Class<?> someClass) {
         int index = this.fields.length;
-        for (Field field : this.typeClass.getDeclaredFields()) {
-            // This one really doesn't need a lot of explanation
-            // (Unless you don't know what transient is, in that case GOOGLE IT)
-            if (Modifier.isTransient(field.getModifiers())) {
+        for (Field field : someClass.getDeclaredFields()) {
+            if (Modifier.isTransient(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
+                continue;
+            }
+
+            // Skip it
+            if (this.exists(field.getName())) {
                 continue;
             }
 
@@ -53,6 +57,8 @@ public class ItemProfileBuilder<T> {
     }
 
     public ItemProfileBuilder<T> addField(PersistentField<T> field) {
+        Validate.isTrue(!this.exists(field.getName()), "Already another field by that name!");
+
         this.fields = Arrays.copyOf(this.fields, this.fields.length + 1);
         int expectedIndex = this.fields.length - 1;
         if (expectedIndex != field.getFieldIndex()) {
@@ -133,5 +139,9 @@ public class ItemProfileBuilder<T> {
 
         return new ItemProfile<>(this.typeClass, keys, this.fields, storedFields,
           autoIncrementField, indicesArray, uniqueIndices, joins);
+    }
+
+    private boolean exists(String name) {
+        return Arrays.stream(this.fields).anyMatch(field -> field.getName().equalsIgnoreCase(name));
     }
 }

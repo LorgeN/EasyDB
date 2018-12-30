@@ -4,7 +4,7 @@ import net.lorgen.easydb.DataType;
 import net.lorgen.easydb.Index;
 import net.lorgen.easydb.ItemRepository;
 import net.lorgen.easydb.Key;
-import net.lorgen.easydb.Persist;
+import net.lorgen.easydb.Options;
 import net.lorgen.easydb.interact.external.External;
 import net.lorgen.easydb.interact.join.Join;
 import org.apache.commons.lang3.StringUtils;
@@ -77,7 +77,7 @@ public class PersistentField<T> {
         this.field = field;
         this.typeClass = field.getType();
 
-        Persist annotation = field.getAnnotation(Persist.class);
+        Options annotation = field.getAnnotation(Options.class);
         if (annotation != null) {
             this.name = StringUtils.isEmpty(annotation.name()) ? field.getName() : annotation.name();
             this.serializerClass = annotation.serializer();
@@ -90,10 +90,6 @@ public class PersistentField<T> {
             this.type = DataType.resolve(field);
             this.size = 16;
             this.typeParams = new Class[0];
-        }
-
-        if (this.type == null) {
-            throw new IllegalArgumentException("Unable to find data type for for field \"" + field.getName() + "\"!");
         }
 
         this.index = field.isAnnotationPresent(Index.class);
@@ -115,10 +111,15 @@ public class PersistentField<T> {
             if (table != null) {
                 this.tableStore = table.table();
                 this.externalStore = !table.saveKeyLocally();
+                this.type = DataType.STRING;
                 this.keyFields = table.keyFields();
                 this.transientSaving = table.immutable();
                 this.repository = table.repository();
             }
+        }
+
+        if (this.type == null) {
+            throw new IllegalArgumentException("Unable to find data type for for field \"" + field.getName() + "\"!");
         }
 
         Key keyAnnot = field.getAnnotation(Key.class);
@@ -316,7 +317,7 @@ public class PersistentField<T> {
 
         PersistentField<?> that = (PersistentField<?>) o;
         return Objects.equals(tClass, that.tClass) &&
-          Objects.equals(field, that.field);
+          Objects.equals(name, that.name);
     }
 
     @Override

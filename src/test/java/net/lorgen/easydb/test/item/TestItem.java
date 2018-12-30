@@ -3,28 +3,39 @@ package net.lorgen.easydb.test.item;
 import net.lorgen.easydb.DeserializerConstructor;
 import net.lorgen.easydb.Index;
 import net.lorgen.easydb.Key;
-import net.lorgen.easydb.Persist;
+import net.lorgen.easydb.Options;
 import net.lorgen.easydb.StoredItem;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 public class TestItem implements StoredItem {
+
+    public static TestItem getRandom() {
+        return new TestItem(randomString(), randomString(), randomString(), randomString(), ThreadLocalRandom.current().nextInt(100) + 5);
+    }
+
+    private static String randomString() {
+        return RandomStringUtils.randomAlphabetic(ThreadLocalRandom.current().nextInt(6) + 5);
+    }
 
     @Key(autoIncrement = true)
     private int id;
 
-    @Persist(name = "name", size = 24)
+    @Options(name = "name", size = 24)
     @Index(unique = true)
     private String username;
 
-    @Persist(typeParams = boolean.class) // Testing persistent field type params
+    @Options(typeParams = boolean.class) // Testing persistent field type params
     @Index(1)
     private String firstName;
 
     @Index(1)
     private String lastName;
 
-    @Persist(size = 32)
+    @Options(size = 32)
     private String email;
 
     private transient int age;

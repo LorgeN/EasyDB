@@ -4,7 +4,7 @@ import net.lorgen.easydb.DataType;
 import net.lorgen.easydb.Index;
 import net.lorgen.easydb.ItemRepository;
 import net.lorgen.easydb.Key;
-import net.lorgen.easydb.Persist;
+import net.lorgen.easydb.Options;
 import net.lorgen.easydb.interact.external.External;
 import net.lorgen.easydb.interact.join.Join;
 import org.apache.commons.lang3.StringUtils;
@@ -109,7 +109,7 @@ public class FieldBuilder<T> {
     }
 
     /**
-     * Takes the data from the field, ether from the {@link Persist} annotation if
+     * Takes the data from the field, ether from the {@link Options} annotation if
      * present, or based on assumptions, and sets the values in this builder
      *
      * @param field The {@link Field field}
@@ -117,7 +117,7 @@ public class FieldBuilder<T> {
      * @throws IllegalArgumentException If no data type for the field was found
      */
     public FieldBuilder<T> setData(Field field) {
-        Persist annotation = field.getAnnotation(Persist.class);
+        Options annotation = field.getAnnotation(Options.class);
         if (annotation != null) {
             this.name = StringUtils.isEmpty(annotation.name()) ? field.getName() : annotation.name();
             this.serializerClass = annotation.serializer();
@@ -280,7 +280,7 @@ public class FieldBuilder<T> {
             return this;
         }
 
-        if (this.indexIds.length == 0) {
+        if (this.indexIds == null || this.indexIds.length == 0) {
             return this.setIndexIds(-1);
         }
 

@@ -50,7 +50,7 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
         this.repository = repository;
         this.table = table;
 
-        this.createTable();
+        this.setUp();
     }
 
     /**
@@ -229,8 +229,10 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
      */
     public int getCurrentAutoIncrement() {
         try (Connection connection = this.getConnection()) {
-            PreparedStatement statement = connection.prepareStatement("SELECT `AUTO_INCREMENT` FROM INFORMATION_SCHEMA.TABLES " +
-              "WHERE TABLE_SCHEMA='" + this.sqlConfig.getDatabase() + "' AND TABLE_NAME='" + this.table + "';");
+            String statementStr = "SELECT `AUTO_INCREMENT` FROM INFORMATION_SCHEMA.TABLES " +
+              "WHERE TABLE_SCHEMA='" + this.sqlConfig.getDatabase() + "' AND TABLE_NAME='" + this.table + "';";
+
+            PreparedStatement statement = connection.prepareStatement(statementStr);
 
             ResultSet resultSet = statement.executeQuery();
             return (resultSet == null || !resultSet.next()) ? 1 : (resultSet.getInt(1));
@@ -374,8 +376,8 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
         PersistentField<T> autoIncrementField = this.repository.getProfile().getAutoIncrementField();
 
         PersistentField<T>[] fields = autoIncrementField == null
-          ? this.repository.getProfile().getFields()
-          : Arrays.stream(this.repository.getProfile().getFields())
+          ? this.repository.getProfile().getStoredFields()
+          : Arrays.stream(this.repository.getProfile().getStoredFields())
           .filter(field -> !field.isAutoIncrement() || ((int) this.repository.getArrayValue(field, query.getValues())) != 0)
           .toArray(PersistentField[]::new);
 
@@ -411,21 +413,26 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
         builder.append(";");
 
         try (Connection connection = this.getConnection()) {
-            int autoIncrement = this.getCurrentAutoIncrement();
-
-            Statement statement = connection.createStatement();
-            statement.execute(builder.toString());
-
             if (autoIncrementField == null
               // If this is the case, the value is already assigned
               || ((int) query.getValue(autoIncrementField).getValue()) != 0
               // If there is no instance present in the query, we have nothing to update
               || !query.getObjectInstance().isPresent()) {
+                Statement statement = connection.createStatement();
+                statement.execute(builder.toString());
                 return;
             }
 
+            PreparedStatement statement = connection.prepareStatement(builder.toString(), Statement.RETURN_GENERATED_KEYS);
+            statement.executeUpdate();
+
+            ResultSet generatedKeys = statement.getGeneratedKeys();
+            generatedKeys.next();
+            int autoIncrement = generatedKeys.getInt(1);
+
             // Update the auto increment field
             autoIncrementField.set(query.getObjectInstance().get(), autoIncrement);
+            this.repository.updateArrayValue(autoIncrementField, autoIncrement, query.getValues());
         } catch (SQLException e) {
             throw new SaveQueryException("Statement: " + builder.toString(), e, query);
         }

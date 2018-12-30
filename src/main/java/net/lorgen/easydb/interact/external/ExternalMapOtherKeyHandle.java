@@ -79,15 +79,19 @@ public class ExternalMapOtherKeyHandle<T> extends OtherKeyHandle<T> {
                 builder.set(key, baseQuery.getValue(key).getValue());
             }
 
-            for (Field field : keyClass.getDeclaredFields()) {
-                if (Modifier.isTransient(field.getModifiers())) {
-                    continue;
-                }
+            if (this.isPrimitive(keyClass)) {
+                builder.set(KEY_FIELD, entry.getKey());
+            } else {
+                for (Field field : keyClass.getDeclaredFields()) {
+                    if (Modifier.isTransient(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
+                        continue;
+                    }
 
-                try {
-                    builder.set(field.getName(), field.get(entry.getKey()));
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
+                    try {
+                        builder.set(field.getName(), field.get(entry.getKey()));
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
 

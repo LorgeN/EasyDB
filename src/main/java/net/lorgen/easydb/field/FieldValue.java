@@ -13,7 +13,7 @@ public class FieldValue<T> {
 
     public FieldValue(PersistentField<T> field, Object value) {
         this.field = field;
-        if (!this.field.getType().matches(value.getClass())) {
+        if (!field.isExternalStore() && !this.field.getType().matches(value.getClass())) {
             throw new IllegalArgumentException("Not a valid value!");
         }
 

@@ -32,8 +32,12 @@ public class QueryBuilder<T> {
 
         // Even tho we pass an instance of T, we still assign the values as we wish to use
         // them instead of querying upon the instance every time we need a value
-        PersistentField<T>[] fields = this.manager.getProfile().getStoredFields();
+        PersistentField<T>[] fields = this.manager.getProfile().getFields();
         for (PersistentField<T> field : fields) {
+            if (field.getField() == null) {
+                continue;
+            }
+
             this.set(field, field.getRawFieldValue(object));
         }
 
