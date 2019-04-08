@@ -4,7 +4,7 @@ import net.lorgen.easydb.access.DatabaseTypeAccessor;
 import net.lorgen.easydb.connection.configuration.ConnectionConfiguration;
 import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.query.Query;
-import net.lorgen.easydb.response.Response;
+import net.lorgen.easydb.query.response.Response;
 
 import java.util.List;
 import java.util.Objects;
@@ -80,17 +80,17 @@ public class SimpleRepository<T> implements DatabaseRepository<T> {
     }
 
     @Override
-    public Response<T> findFirstSync(Query<T> query) {
+    public Response<T> findFirst(Query<T> query) {
         return accessor.findFirst(query);
     }
 
     @Override
-    public List<Response<T>> findAllSync(Query<T> query) {
+    public List<Response<T>> findAll(Query<T> query) {
         return accessor.findAll(query);
     }
 
     @Override
-    public void saveSync(Query<T> query) {
+    public void save(Query<T> query) {
         query.getObjectInstance().ifPresent(instance -> {
             if (instance instanceof StoredItem) {
                 ((StoredItem) instance).preSave();
@@ -107,7 +107,7 @@ public class SimpleRepository<T> implements DatabaseRepository<T> {
     }
 
     @Override
-    public void deleteSync(Query<T> query) {
+    public void delete(Query<T> query) {
         query.getObjectInstance().ifPresent(instance -> {
             if (instance instanceof StoredItem) {
                 ((StoredItem) instance).preDelete();

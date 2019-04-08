@@ -32,16 +32,9 @@ public @interface External {
     Class<? extends ItemRepository> repository() default ItemRepository.class;
 
     /**
-     * @return If we should store the key(s) of the object as a local field.
-     */
-    boolean saveKeyLocally() default false;
-
-    /**
      * @return The local field(s) to use as keys when finding external object(s).
-     * Names must match in the two stored items. If this is used, {@link #saveKeyLocally()}
-     * should be set to false. If {@link #saveKeyLocally()} isn't used, and this
-     * is left empty, an attempt will be made to match keys in this type to that
-     * of the stored type in this field.
+     * Names must match in the two stored items. If not set, an attempt to match
+     * keys between objects will be made.
      */
     String[] keyFields() default {};
 

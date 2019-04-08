@@ -1,5 +1,7 @@
 package net.lorgen.easydb.field;
 
+import net.lorgen.easydb.DataType;
+
 import java.util.Objects;
 
 public class FieldValue<T> {
@@ -33,8 +35,8 @@ public class FieldValue<T> {
     }
 
     public void setValue(Object value) {
-        if (!this.field.getType().matches(value.getClass())) {
-            throw new IllegalArgumentException("Not a valid value!");
+        if (this.field.getType() != DataType.CUSTOM && !this.field.getType().matches(value.getClass())) {
+            throw new IllegalArgumentException("Not a valid value! Attempted value: " + value + " for field " + this.getField());
         }
 
         this.value = value;

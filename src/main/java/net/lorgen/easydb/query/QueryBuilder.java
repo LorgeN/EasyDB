@@ -5,8 +5,7 @@ import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.ItemRepository;
 import net.lorgen.easydb.query.req.QueryRequirement;
 import net.lorgen.easydb.query.req.RequirementBuilder;
-import net.lorgen.easydb.response.Response;
-import net.lorgen.easydb.util.Callback;
+import net.lorgen.easydb.query.response.Response;
 
 import java.util.Arrays;
 import java.util.List;
@@ -76,44 +75,20 @@ public class QueryBuilder<T> {
 
     // Shortcut methods
 
-    public void findFirstAsync(Callback<Response<T>> callback) {
-        manager.findFirstAsync(this.build(), callback);
+    public Response<T> findFirst() {
+        return manager.findFirst(this.build());
     }
 
-    public Response<T> findFirstSync() {
-        return manager.findFirstSync(this.build());
+    public List<Response<T>> findAll() {
+        return manager.findAll(this.build());
     }
 
-    public void findAllAsync(Callback<List<Response<T>>> callback) {
-        manager.findAllAsync(this.build(), callback);
+    public void save() {
+        manager.save(this.build());
     }
 
-    public List<Response<T>> findAllSync() {
-        return manager.findAllSync(this.build());
-    }
-
-    public void saveAsync() {
-        manager.saveAsync(this.build());
-    }
-
-    public void saveAsync(Runnable callback) {
-        manager.saveAsync(this.build(), callback);
-    }
-
-    public void saveSync() {
-        manager.saveSync(this.build());
-    }
-
-    public void deleteAsync() {
-        manager.deleteAsync(this.build());
-    }
-
-    public void deleteAsync(Runnable callback) {
-        manager.deleteAsync(this.build(), callback);
-    }
-
-    public void deleteSync() {
-        manager.deleteSync(this.build());
+    public void delete() {
+        manager.delete(this.build());
     }
 
     // Internals

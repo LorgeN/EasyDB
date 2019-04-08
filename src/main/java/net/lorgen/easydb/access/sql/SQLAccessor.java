@@ -20,7 +20,7 @@ import net.lorgen.easydb.query.Query;
 import net.lorgen.easydb.query.req.CombinedRequirement;
 import net.lorgen.easydb.query.req.QueryRequirement;
 import net.lorgen.easydb.query.req.SimpleRequirement;
-import net.lorgen.easydb.response.Response;
+import net.lorgen.easydb.query.response.Response;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -40,14 +40,13 @@ import java.util.Map.Entry;
  */
 public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
 
-    private final ItemRepository<T> repository;
     private final String table;
     private final SQLConfiguration sqlConfig;
 
     public SQLAccessor(SQLConfiguration sqlConfig, ItemRepository<T> repository, String table) {
+        super(repository);
         this.sqlConfig = sqlConfig;
 
-        this.repository = repository;
         this.table = table;
 
         this.setUp();
@@ -69,8 +68,8 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
     public void createTable() {
         StringBuilder builder = new StringBuilder("CREATE TABLE IF NOT EXISTS " + this.table + "(");
 
-        PersistentField<T>[] fields = this.repository.getProfile().getStoredFields();
-        PersistentField<T>[] keys = this.repository.getProfile().getKeys();
+        PersistentField<T>[] fields = this.getRepository().getProfile().getStoredFields();
+        PersistentField<T>[] keys = this.getRepository().getProfile().getKeys();
 
         for (PersistentField<T> field : fields) {
             builder.append(this.toColumnDeclaration(field));
@@ -105,7 +104,7 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
      * automatically along with table creation.
      */
     public void createIndices() {
-        WrappedIndex<T>[] indices = this.repository.getProfile().getIndices();
+        WrappedIndex<T>[] indices = this.getRepository().getProfile().getIndices();
         if (indices.length == 0) {
             return;
         }
@@ -189,7 +188,7 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
 
     @Override
     public ItemProfile<T> getProfile() {
-        return this.repository.getProfile();
+        return this.getRepository().getProfile();
     }
 
     @Override
@@ -249,7 +248,7 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
         try (Connection connection = this.getConnection()) {
             ResultSet result = connection.createStatement().executeQuery(statement);
             if (!result.next()) {
-                return new Response<>(this.repository.getProfile());
+                return new Response<>(this.getRepository().getProfile());
             }
 
             return this.fromResultSet(result);
@@ -279,7 +278,7 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
     private String getStatement(Query<T> query) {
         StringBuilder builder = new StringBuilder("SELECT ");
 
-        PersistentField<T>[] fields = this.repository.getProfile().getFields(); // Get all fields
+        PersistentField<T>[] fields = this.getRepository().getProfile().getFields(); // Get all fields
 
         for (int i = 0; i < fields.length; i++) {
             PersistentField<T> field = fields[i];
@@ -309,7 +308,7 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
             builder.append(" WHERE ").append(this.toString(query.getRequirement()));
         }
 
-        for (JoinWrapper join : this.repository.getProfile().getJoins()) {
+        for (JoinWrapper join : this.getRepository().getProfile().getJoins()) {
             builder.append(" INNER JOIN ")
               .append("`")
               .append(join.getTable())
@@ -341,7 +340,7 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
                 FieldValue<T> value = values[i];
                 Object fieldVal = value.getValue();
                 DataType type = value.getField().getType();
-                String quotedVal = this.quote(type.toString(this.repository, value.getField(), fieldVal), value.getField());
+                String quotedVal = this.quote(type.toString(this.getRepository(), value.getField(), fieldVal), value.getField());
 
                 builder
                   .append("`")
@@ -373,12 +372,12 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
         StringBuilder valuesBuilder = new StringBuilder();
         StringBuilder updateBuilder = new StringBuilder();
 
-        PersistentField<T> autoIncrementField = this.repository.getProfile().getAutoIncrementField();
+        PersistentField<T> autoIncrementField = this.getRepository().getProfile().getAutoIncrementField();
 
         PersistentField<T>[] fields = autoIncrementField == null
-          ? this.repository.getProfile().getStoredFields()
-          : Arrays.stream(this.repository.getProfile().getStoredFields())
-          .filter(field -> !field.isAutoIncrement() || ((int) this.repository.getArrayValue(field, query.getValues())) != 0)
+          ? this.getRepository().getProfile().getStoredFields()
+          : Arrays.stream(this.getRepository().getProfile().getStoredFields())
+          .filter(field -> !field.isAutoIncrement() || ((int) this.getRepository().getArrayValue(field, query.getValues())) != 0)
           .toArray(PersistentField[]::new);
 
         for (int i = 0; i < fields.length; i++) {
@@ -389,7 +388,7 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
 
             FieldValue<T> value = query.getValue(field);
 
-            String valueStr = value.getValue() == null ? "null" : this.quote(field.getType().toString(this.repository, field, value.getValue()), field);
+            String valueStr = value.getValue() == null ? "null" : this.quote(field.getType().toString(this.getRepository(), field, value.getValue()), field);
 
             builder.append("`").append(field.getName()).append("`");
             valuesBuilder.append(valueStr);
@@ -432,7 +431,7 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
 
             // Update the auto increment field
             autoIncrementField.set(query.getObjectInstance().get(), autoIncrement);
-            this.repository.updateArrayValue(autoIncrementField, autoIncrement, query.getValues());
+            this.getRepository().updateArrayValue(autoIncrementField, autoIncrement, query.getValues());
         } catch (SQLException e) {
             throw new SaveQueryException("Statement: " + builder.toString(), e, query);
         }
@@ -482,12 +481,12 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
     }
 
     private Response<T> fromResultSet(ResultSet set) {
-        return new Response<>(this.repository.getProfile(), this.getValuesFromResultSet(set));
+        return new Response<>(this.getRepository().getProfile(), this.getValuesFromResultSet(set));
     }
 
     private FieldValue<T>[] getValuesFromResultSet(ResultSet set) {
         try {
-            PersistentField<T>[] fields = this.repository.getProfile().getFields();
+            PersistentField<T>[] fields = this.getRepository().getProfile().getFields();
             FieldValue<T>[] values = new FieldValue[fields.length];
             for (int i = 0; i < fields.length; i++) {
                 PersistentField<T> field = fields[i];
@@ -497,12 +496,12 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
                 }
 
                 Object value = set.getObject(field.getName());
-                if (field.getType().returnsPrimitive(this.repository, field)) {
+                if (field.getType().returnsPrimitive(this.getRepository(), field)) {
                     values[i] = new FieldValue<>(field, value);
                     continue;
                 }
 
-                values[i] = new FieldValue<>(field, field.getType().fromString(this.repository, field, (String) value));
+                values[i] = new FieldValue<>(field, field.getType().fromString(this.getRepository(), field, (String) value));
             }
 
             return values;
@@ -514,7 +513,7 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
 
     private String quote(String serialized, PersistentField<T> field) {
         // Primitive types don't need escape characters
-        if (field.getType().returnsPrimitive(this.repository, field)) {
+        if (field.getType().returnsPrimitive(this.getRepository(), field)) {
             return serialized;
         }
 
@@ -525,7 +524,7 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
     private String toString(QueryRequirement requirement) {
         if (requirement instanceof SimpleRequirement) {
             SimpleRequirement req = (SimpleRequirement) requirement;
-            String value = req.getField().getType().toString(this.repository, req.getField(), req.getValue());
+            String value = req.getField().getType().toString(this.getRepository(), req.getField(), req.getValue());
             return "`" + req.getField().getName() + "`" + req.getOperator() + this.quote(value, (PersistentField<T>) req.getField());
         }
 

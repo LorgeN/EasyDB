@@ -10,12 +10,14 @@ import com.google.gson.JsonObject;
 import net.lorgen.easydb.field.FieldSerializer;
 import net.lorgen.easydb.field.FieldSerializers;
 import net.lorgen.easydb.field.PersistentField;
+import net.lorgen.easydb.interact.external.External;
 import net.lorgen.easydb.util.UtilGSON;
 import net.lorgen.easydb.util.UtilType;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -73,7 +75,7 @@ public enum DataType implements FieldSerializer {
      */
 
     /**
-     * A {@link Byte}, or it's primitive {@code byte}
+     * A {@link Byte}, or its primitive {@code byte}
      */
     BYTE(Byte.class, Byte.TYPE) {
         @Override
@@ -82,7 +84,7 @@ public enum DataType implements FieldSerializer {
         }
     },
     /**
-     * A {@link Short}, or it's primitive {@code short}
+     * A {@link Short}, or its primitive {@code short}
      */
     SHORT(Short.class, Short.TYPE) {
         @Override
@@ -91,7 +93,7 @@ public enum DataType implements FieldSerializer {
         }
     },
     /**
-     * A {@link Integer}, or it's primitive {@code int}
+     * A {@link Integer}, or its primitive {@code int}
      */
     INTEGER(Integer.class, Integer.TYPE) {
         @Override
@@ -100,7 +102,7 @@ public enum DataType implements FieldSerializer {
         }
     },
     /**
-     * A {@link Long}, or it's primitive {@code long}
+     * A {@link Long}, or its primitive {@code long}
      */
     LONG(Long.class, Long.TYPE) {
         @Override
@@ -109,7 +111,7 @@ public enum DataType implements FieldSerializer {
         }
     },
     /**
-     * A {@link Float}, or it's primitive {@code float}
+     * A {@link Float}, or its primitive {@code float}
      */
     FLOAT(Float.class, Float.TYPE) {
         @Override
@@ -118,7 +120,7 @@ public enum DataType implements FieldSerializer {
         }
     },
     /**
-     * A {@link Double}, or it's primitive {@code double}
+     * A {@link Double}, or its primitive {@code double}
      */
     DOUBLE(Double.class, Double.TYPE) {
         @Override
@@ -127,7 +129,7 @@ public enum DataType implements FieldSerializer {
         }
     },
     /**
-     * A {@link Boolean}, or it's primitive {@code boolean}
+     * A {@link Boolean}, or its primitive {@code boolean}
      */
     BOOLEAN(Boolean.class, Boolean.TYPE) {
         @Override
@@ -144,6 +146,8 @@ public enum DataType implements FieldSerializer {
     /**
      * A {@link List}. Requires a {@link Options#typeParams()} value for the type
      * parameter of the list. Requires the value to be serializable using {@link Gson GSON}.
+     * <p>
+     * Often recommended to take use of the {@link External} annotation instead.
      */
     LIST(List.class) {
         @Override
@@ -165,7 +169,7 @@ public enum DataType implements FieldSerializer {
             // is wrong somewhere
             if (field.getTypeParameters().length != 1) {
                 throw new IllegalArgumentException("Invalid type parameters for field \"" + field.getName() +
-                        "\" in " + field.getDeclaringClass().getSimpleName() + "!");
+                  "\" in " + field.getDeclaringClass().getSimpleName() + "!");
             }
 
             // Don't give type params at all to avoid errors. As type parameters
@@ -207,7 +211,7 @@ public enum DataType implements FieldSerializer {
             // is wrong somewhere
             if (field.getTypeParameters().length != 1) {
                 throw new IllegalArgumentException("Invalid type parameters for field \"" + field.getName() +
-                        "\" in " + field.getDeclaringClass().getSimpleName() + "!");
+                  "\" in " + field.getDeclaringClass().getSimpleName() + "!");
             }
 
             // Don't give type params at all to avoid errors. As type parameters
@@ -290,7 +294,7 @@ public enum DataType implements FieldSerializer {
             Class<?>[] typeParams = field.getTypeParameters();
             if (typeParams.length != 2) {
                 throw new IllegalArgumentException("Invalid type parameters for field \"" + field.getName() +
-                        "\" in " + field.getDeclaringClass().getSimpleName() + "!");
+                  "\" in " + field.getDeclaringClass().getSimpleName() + "!");
             }
 
             Class keyClass = typeParams[0];
@@ -373,7 +377,7 @@ public enum DataType implements FieldSerializer {
             }
 
             throw new IllegalStateException("Field \"" + field.getName() + "\" in " + field.getDeclaringClass().getSimpleName() +
-                    " has CUSTOM data type, but no custom serializer is specified!");
+              " has CUSTOM data type, but no custom serializer is specified!");
         }
     };
 
@@ -455,15 +459,9 @@ public enum DataType implements FieldSerializer {
      * @return The appropriate {@link DataType type}, or {@code null} if no type is found.
      */
     public static DataType resolve(Class<?> fieldType) {
-        for (DataType type : DataType.values()) {
-            if (type == AUTO || !type.matches(fieldType)) {
-                continue;
-            }
-
-            return type;
-        }
-
-        return null;
+        return Arrays.stream(DataType.values())
+          .filter(type -> type != AUTO && type.matches(fieldType))
+          .findFirst().orElse(null);
     }
 
     @Override

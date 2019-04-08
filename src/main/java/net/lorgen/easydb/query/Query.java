@@ -1,14 +1,13 @@
 package net.lorgen.easydb.query;
 
 import net.lorgen.easydb.field.FieldValue;
-import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.query.req.QueryRequirement;
 
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
-public class Query<T> {
+public class Query<T> implements ValueHolder<T> {
 
     private Class<T> typeClass;
     private Optional<T> instance;
@@ -31,32 +30,17 @@ public class Query<T> {
         return typeClass;
     }
 
-    public FieldValue<T>[] getValues() {
-        return values;
-    }
-
     public QueryRequirement getRequirement() {
         return req;
     }
 
-    public FieldValue<T> getValue(String field) {
-        return Arrays.stream(this.values)
-          .filter(value -> value.getField().getName().equalsIgnoreCase(field))
-          .findFirst().orElse(null);
-    }
-
-    public FieldValue<T> getValue(PersistentField<T> field) {
-        return Arrays.stream(this.values)
-          .filter(value -> value.getField().equals(field))
-          .findFirst().orElse(null);
-    }
-
-    public boolean hasValue(PersistentField<T> field) {
-        return Arrays.stream(this.values).anyMatch(value -> value.getField().equals(field));
-    }
-
     public Optional<T> getObjectInstance() {
         return instance;
+    }
+
+    @Override
+    public FieldValue<T>[] getValues() {
+        return values;
     }
 
     @Override

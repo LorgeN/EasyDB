@@ -360,7 +360,7 @@ public class FieldBuilder<T> {
         }
 
         this.tableStore = table.table();
-        this.externalStore = !table.saveKeyLocally();
+        this.externalStore = true;
         this.keyFields = table.keyFields();
         this.transientField = !table.immutable();
         this.repository = table.repository();
@@ -396,11 +396,7 @@ public class FieldBuilder<T> {
      * @param immutable      If this field is immutable, meaning that we shouldn't
      *                       save it when the parent object is saved
      * @param keyFields      The local field(s) to use as keys when finding external
-     *                       object(s). If this is used, {@link External#saveKeyLocally()}
-     *                       should be set to false. If {@link External#saveKeyLocally()}
-     *                       isn't used, and this is left empty, an attempt will be made
-     *                       to match keys in this type to that of the stored type in this
-     *                       field.
+     *                       object(s).
      * @param repository     The {@link Class class} of the repository managing this field
      * @return This
      */
@@ -418,11 +414,7 @@ public class FieldBuilder<T> {
      * @param immutable      If this field is immutable, meaning that we shouldn't
      *                       save it when the parent object is saved
      * @param keyFields      The local field(s) to use as keys when finding external
-     *                       object(s). If this is used, {@link External#saveKeyLocally()}
-     *                       should be set to false. If {@link External#saveKeyLocally()}
-     *                       isn't used, and this is left empty, an attempt will be made
-     *                       to match keys in this type to that of the stored type in this
-     *                       field.
+     *                       object(s).
      * @return This
      */
     public FieldBuilder<T> setTable(String table, boolean saveKeyLocally, boolean immutable, String[] keyFields) {
@@ -439,11 +431,7 @@ public class FieldBuilder<T> {
      * @param immutable      If this field is immutable, meaning that we shouldn't
      *                       save it when the parent object is saved
      * @param keyFields      The local field(s) to use as keys when finding external
-     *                       object(s). If this is used, {@link External#saveKeyLocally()}
-     *                       should be set to false. If {@link External#saveKeyLocally()}
-     *                       isn't used, and this is left empty, an attempt will be made
-     *                       to match keys in this type to that of the stored type in this
-     *                       field.
+     *                       object(s).
      * @param repository     The {@link Class class} of the repository managing this field
      * @return This
      */

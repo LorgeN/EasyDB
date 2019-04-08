@@ -17,6 +17,10 @@ public class TestItem implements StoredItem {
         return new TestItem(randomString(), randomString(), randomString(), randomString(), ThreadLocalRandom.current().nextInt(100) + 5);
     }
 
+    public static TestItem getRandom(String name) {
+        return new TestItem(name, randomString(), randomString(), randomString(), ThreadLocalRandom.current().nextInt(100) + 5);
+    }
+
     private static String randomString() {
         return RandomStringUtils.randomAlphabetic(ThreadLocalRandom.current().nextInt(6) + 5);
     }
@@ -25,7 +29,7 @@ public class TestItem implements StoredItem {
     private int id;
 
     @Options(name = "name", size = 24)
-    @Index(unique = true)
+    @Index
     private String username;
 
     @Options(typeParams = boolean.class) // Testing persistent field type params
@@ -36,6 +40,7 @@ public class TestItem implements StoredItem {
     private String lastName;
 
     @Options(size = 32)
+    @Index(unique = true)
     private String email;
 
     private transient int age;
@@ -132,7 +137,7 @@ public class TestItem implements StoredItem {
           .append(firstName)
           .append(lastName)
           .append(email)
-          .append(age)
+          //.append(age)
           .toHashCode();
     }
 
@@ -144,7 +149,7 @@ public class TestItem implements StoredItem {
           ", firstName='" + firstName + '\'' +
           ", lastName='" + lastName + '\'' +
           ", email='" + email + '\'' +
-          ", age=" + age +
+          //", age=" + age +
           '}';
     }
 }

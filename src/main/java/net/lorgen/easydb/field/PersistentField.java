@@ -110,8 +110,8 @@ public class PersistentField<T> {
             External table = field.getAnnotation(External.class);
             if (table != null) {
                 this.tableStore = table.table();
-                this.externalStore = !table.saveKeyLocally();
-                this.type = DataType.STRING;
+                this.externalStore = true;
+                this.type = DataType.CUSTOM;
                 this.keyFields = table.keyFields();
                 this.transientSaving = table.immutable();
                 this.repository = table.repository();
@@ -255,6 +255,11 @@ public class PersistentField<T> {
 
     public boolean hasCustomSerializer() {
         return this.getSerializerClass() != DataType.class;
+    }
+
+    // Provide a setter here for external fields
+    public void setSerializerClass(Class<? extends FieldSerializer> serializerClass) {
+        this.serializerClass = serializerClass;
     }
 
     public Class<? extends FieldSerializer> getSerializerClass() {

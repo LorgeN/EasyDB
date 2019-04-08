@@ -5,7 +5,7 @@ import net.lorgen.easydb.ItemRepository;
 import net.lorgen.easydb.Repositories;
 import net.lorgen.easydb.connection.ConnectionRegistry;
 import net.lorgen.easydb.connection.configuration.ConnectionConfiguration;
-import net.lorgen.easydb.response.Response;
+import net.lorgen.easydb.query.response.Response;
 import net.lorgen.easydb.test.integration.connection.redis.EnvironmentSQLConfig;
 import net.lorgen.easydb.test.integration.connection.sql.EnvironmentRedisConfig;
 import net.lorgen.easydb.test.item.TestItem;
@@ -38,12 +38,12 @@ public class BasicDatabaseIT {
             // Save the item to the repository
             repository.newQuery()
               .set(item)
-              .saveSync();
+              .save();
 
             // Try fetching the item
             Response<TestItem> found = repository.newQuery()
               .where().keysAreSameAs(item)
-              .closeAll().findFirstSync();
+              .closeAll().findFirst();
 
             // Verify we actually found something
             assertThat(found.isEmpty()).isFalse();
@@ -59,7 +59,7 @@ public class BasicDatabaseIT {
             repository.newQuery()
               .set("username", newUsername)
               .where().keysAreSameAs(item).closeAll()
-              .saveSync();
+              .save();
 
             // Update the local instance
             item.setUsername(newUsername);
@@ -67,7 +67,7 @@ public class BasicDatabaseIT {
             // Fetch the new value from the database
             found = repository.newQuery()
               .where().keysAreSameAs(item)
-              .closeAll().findFirstSync();
+              .closeAll().findFirst();
 
             // Assert that we found something
             assertThat(found.isEmpty()).isFalse();
@@ -77,7 +77,7 @@ public class BasicDatabaseIT {
             // Try finding an item with the old username
             found = repository.newQuery()
               .where().equals("username", oldUsername).closeAll()
-              .findFirstSync();
+              .findFirst();
 
             // Assert that no such item exists
             assertThat(found.isEmpty()).isTrue();
@@ -89,12 +89,12 @@ public class BasicDatabaseIT {
             // Save it
             repository.newQuery()
               .set(item)
-              .saveSync();
+              .save();
 
             // Fetch the new value from the database
             found = repository.newQuery()
               .where().keysAreSameAs(item)
-              .closeAll().findFirstSync();
+              .closeAll().findFirst();
 
             // Assert that we found something
             assertThat(found.isEmpty()).isFalse();
@@ -102,18 +102,18 @@ public class BasicDatabaseIT {
             assertThat(found.getInstance()).isEqualTo(item);
 
             // Delete the item
-            repository.newQuery().where().keysAreSameAs(item).closeAll().deleteSync();
+            repository.newQuery().where().keysAreSameAs(item).closeAll().delete();
 
             // Try to find it again
             found = repository.newQuery()
               .where().keysAreSameAs(item)
-              .closeAll().findFirstSync();
+              .closeAll().findFirst();
 
             // Assert that nothing was found
             assertThat(found.isEmpty()).isTrue();
         }
 
-        repository.newQuery().deleteSync(); // Delete everything
+        repository.newQuery().delete(); // Delete everything
 
         ConnectionRegistry.getInstance().closeAllAndReset();
     }

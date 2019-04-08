@@ -3,6 +3,7 @@ package net.lorgen.easydb;
 import com.google.common.collect.Lists;
 import net.lorgen.easydb.connection.configuration.ConnectionConfiguration;
 import net.lorgen.easydb.profile.ItemProfile;
+import net.lorgen.easydb.util.UtilLog;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
@@ -44,11 +45,11 @@ public class Repositories {
         return getRepository(type, null, typeClass, null);
     }
 
-    public static <G, T extends ItemRepository<G>> T geRepositoryByTable(String table) {
+    public static <G, T extends ItemRepository<G>> T getRepositoryByTable(String table) {
         return getRepository(null, table, null, null);
     }
 
-    public static <G, T extends ItemRepository<G>> T geRepositoryByTable(DatabaseType type, String table) {
+    public static <G, T extends ItemRepository<G>> T getRepositoryByTable(DatabaseType type, String table) {
         return getRepository(type, table, null, null);
     }
 
@@ -60,7 +61,7 @@ public class Repositories {
                 return false;
             }
 
-            if (typeClass != null || repo.getTypeClass() != typeClass) {
+            if (typeClass != null && repo.getTypeClass() != typeClass) {
                 return false;
             }
 

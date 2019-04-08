@@ -5,9 +5,7 @@ import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.query.Query;
 import net.lorgen.easydb.query.QueryBuilder;
-import net.lorgen.easydb.response.Response;
-import net.lorgen.easydb.util.Callback;
-import net.lorgen.easydb.util.concurrency.UtilConcurrency;
+import net.lorgen.easydb.query.response.Response;
 
 import java.util.Arrays;
 import java.util.List;
@@ -35,85 +33,27 @@ public interface ItemRepository<T> {
         return new QueryBuilder<>(this);
     }
 
-    default void findFirstAsync(Query<T> query, Callback<Response<T>> callback) {
-        UtilConcurrency.submit(() -> {
-            Response<T> value = this.findFirstSync(query);
-            callback.call(value);
-        });
-    }
+    Response<T> findFirst(Query<T> query);
 
-    Response<T> findFirstSync(Query<T> query);
+    List<Response<T>> findAll(Query<T> query);
 
-    default void findAllAsync(Query<T> query, Callback<List<Response<T>>> callback) {
-        UtilConcurrency.submit(() -> {
-            List<Response<T>> value = this.findAllSync(query);
-            callback.call(value);
-        });
-    }
-
-    List<Response<T>> findAllSync(Query<T> query);
-
-    default void saveAsync(T object) {
-        this.saveAsync(this.newQuery()
+    default void save(T object) {
+        this.save(this.newQuery()
           .set(object)
           .build());
     }
 
-    default void saveAsync(Query<T> query) {
-        this.saveAsync(query, null);
-    }
+    void save(Query<T> query);
 
-    default void saveAsync(Query<T> query, Runnable callback) {
-        UtilConcurrency.submit(() -> {
-            this.saveSync(query);
-            if (callback == null) {
-                return;
-            }
-
-            callback.run();
-        });
-    }
-
-    default void saveSync(T object) {
-        this.saveSync(this.newQuery()
-          .set(object)
-          .build());
-    }
-
-    void saveSync(Query<T> query);
-
-    default void deleteAsync(T object) {
-        this.deleteAsync(this.newQuery()
+    default void delete(T object) {
+        this.delete(this.newQuery()
           .where()
           .andKeysAreSameAs(object)
           .closeAll()
           .build());
     }
 
-    default void deleteAsync(Query<T> query) {
-        this.deleteAsync(query, null);
-    }
-
-    default void deleteAsync(Query<T> query, Runnable callback) {
-        UtilConcurrency.submit(() -> {
-            this.deleteSync(query);
-            if (callback == null) {
-                return;
-            }
-
-            callback.run();
-        });
-    }
-
-    default void deleteSync(T object) {
-        this.deleteSync(this.newQuery()
-          .where()
-          .andKeysAreSameAs(object)
-          .closeAll()
-          .build());
-    }
-
-    void deleteSync(Query<T> query);
+    void delete(Query<T> query);
 
     default void updateArrayValue(PersistentField<T> field, Object value, FieldValue<T>[] values) {
         Arrays.stream(values)

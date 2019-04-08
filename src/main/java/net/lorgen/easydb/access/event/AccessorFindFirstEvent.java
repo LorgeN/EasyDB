@@ -1,9 +1,8 @@
 package net.lorgen.easydb.access.event;
 
 import net.lorgen.easydb.access.DatabaseTypeAccessor;
-import net.lorgen.easydb.event.HandlerList;
 import net.lorgen.easydb.query.Query;
-import net.lorgen.easydb.response.Response;
+import net.lorgen.easydb.query.response.Response;
 
 public class AccessorFindFirstEvent extends QueryEvent {
 

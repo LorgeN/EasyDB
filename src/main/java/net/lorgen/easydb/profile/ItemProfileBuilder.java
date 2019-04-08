@@ -141,7 +141,7 @@ public class ItemProfileBuilder<T> {
           autoIncrementField, indicesArray, uniqueIndices, joins);
     }
 
-    private boolean exists(String name) {
+    public boolean exists(String name) {
         return Arrays.stream(this.fields).anyMatch(field -> field.getName().equalsIgnoreCase(name));
     }
 }

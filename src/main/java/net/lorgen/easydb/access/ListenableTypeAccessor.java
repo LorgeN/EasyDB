@@ -1,6 +1,7 @@
 package net.lorgen.easydb.access;
 
 import com.google.common.collect.Lists;
+import net.lorgen.easydb.ItemRepository;
 import net.lorgen.easydb.access.event.AccessorDeleteEvent;
 import net.lorgen.easydb.access.event.AccessorDropEvent;
 import net.lorgen.easydb.access.event.AccessorFindAllEvent;
@@ -11,15 +12,14 @@ import net.lorgen.easydb.access.event.AccessorSetUpEvent;
 import net.lorgen.easydb.event.EventManager;
 import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.interact.external.External;
-import net.lorgen.easydb.interact.external.ExternalCollectionOtherKeyHandle;
-import net.lorgen.easydb.interact.external.ExternalFieldOtherKeyHandle;
-import net.lorgen.easydb.interact.external.ExternalMapOtherKeyHandle;
+import net.lorgen.easydb.interact.external.QueryHelper;
+import net.lorgen.easydb.interact.external.QueryHelperListener;
+import net.lorgen.easydb.profile.external.ExternalFieldProfile;
+import net.lorgen.easydb.profile.external.strategy.StrategyHelper;
 import net.lorgen.easydb.query.Query;
-import net.lorgen.easydb.response.Response;
+import net.lorgen.easydb.query.response.Response;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 /**
  * A {@link DatabaseTypeAccessor} with listenable events using the {@link EventManager}.
@@ -32,14 +32,20 @@ import java.util.Map;
  */
 public abstract class ListenableTypeAccessor<T> implements DatabaseTypeAccessor<T> {
 
-    private EventManager eventManager;
+    private final EventManager eventManager;
+    private final ItemRepository<T> repository;
 
-    public ListenableTypeAccessor() {
+    public ListenableTypeAccessor(ItemRepository<T> repository) {
+        this.repository = repository;
         this.eventManager = new EventManager();
     }
 
     public EventManager getEventManager() {
         return eventManager;
+    }
+
+    public ItemRepository<T> getRepository() {
+        return repository;
     }
 
     @Override
@@ -57,23 +63,11 @@ public abstract class ListenableTypeAccessor<T> implements DatabaseTypeAccessor<
                 continue;
             }
 
-            if (!field.isExternalStore()) {
-                // TODO: Handle this
-                continue;
-            }
+            assert field.isExternalStore();
 
-            Class<?> typeClass = field.getTypeClass();
-            if (Map.class.isAssignableFrom(typeClass)) {
-                this.getEventManager().registerListener(new ExternalMapOtherKeyHandle<>(this, field));
-                continue;
-            }
-
-            if (Collection.class.isAssignableFrom(typeClass)) {
-                this.getEventManager().registerListener(new ExternalCollectionOtherKeyHandle<>(this, field));
-                continue;
-            }
-
-            this.getEventManager().registerListener(new ExternalFieldOtherKeyHandle<>(this, field));
+            ExternalFieldProfile<T> profile = StrategyHelper.getProfiler(this, field);
+            QueryHelper helper = profile.getNewQueryHelper();
+            this.getEventManager().registerListener(new QueryHelperListener(this.repository, helper));
         }
     }
 

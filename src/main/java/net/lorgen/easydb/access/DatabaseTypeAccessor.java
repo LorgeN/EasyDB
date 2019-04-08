@@ -3,7 +3,7 @@ package net.lorgen.easydb.access;
 import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.query.Query;
-import net.lorgen.easydb.response.Response;
+import net.lorgen.easydb.query.response.Response;
 
 import java.util.List;
 

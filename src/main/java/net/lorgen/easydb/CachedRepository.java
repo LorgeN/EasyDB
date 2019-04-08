@@ -4,7 +4,7 @@ import com.google.common.collect.Maps;
 import net.lorgen.easydb.field.PersistentField;
 import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.query.Query;
-import net.lorgen.easydb.response.Response;
+import net.lorgen.easydb.query.response.Response;
 
 import java.util.Arrays;
 import java.util.List;
@@ -41,24 +41,24 @@ public class CachedRepository<T> implements ItemRepository<T> {
     }
 
     @Override
-    public Response<T> findFirstSync(Query<T> query) {
+    public Response<T> findFirst(Query<T> query) {
         // TODO
         return null;
     }
 
     @Override
-    public List<Response<T>> findAllSync(Query<T> query) {
+    public List<Response<T>> findAll(Query<T> query) {
         // TODO
         return null;
     }
 
     @Override
-    public void saveSync(Query<T> query) {
+    public void save(Query<T> query) {
         // TODO
     }
 
     @Override
-    public void deleteSync(Query<T> query) {
+    public void delete(Query<T> query) {
         // TODO
     }
 
