@@ -9,10 +9,10 @@ import net.lorgen.easydb.interact.external.ExternalCollectionQueryHelper;
 import net.lorgen.easydb.interact.external.ExternalFieldQueryHelper;
 import net.lorgen.easydb.interact.external.ExternalMapQueryHelper;
 import net.lorgen.easydb.interact.external.KeyRelation;
+import net.lorgen.easydb.interact.external.KeyRelation.KeyHolder;
 import net.lorgen.easydb.interact.external.QueryHelper;
 import net.lorgen.easydb.profile.ItemProfile;
 import net.lorgen.easydb.profile.ItemProfileBuilder;
-import net.lorgen.easydb.interact.external.KeyRelation.KeyHolder;
 import net.lorgen.easydb.profile.external.strategy.ProfilerContext;
 import net.lorgen.easydb.profile.external.strategy.ProfilerStrategy;
 import net.lorgen.easydb.query.QueryBuilder;
@@ -59,16 +59,16 @@ public class ExternalFieldProfile<T> {
     }
 
     public QueryHelper getNewQueryHelper() {
-        Class<?> typeClass = this.getTypeClass();
-        if (Map.class.isAssignableFrom(typeClass)) {
-            return new ExternalMapQueryHelper(this);
+        switch (this.getContext()) {
+            case FIELD:
+                return new ExternalFieldQueryHelper(this);
+            case COLLECTION:
+                return new ExternalCollectionQueryHelper(this);
+            case MAP:
+                return new ExternalMapQueryHelper(this);
+            default:
+                throw new IllegalArgumentException("Unknown context!");
         }
-
-        if (Collection.class.isAssignableFrom(typeClass)) {
-            return new ExternalCollectionQueryHelper(this);
-        }
-
-        return new ExternalFieldQueryHelper(this);
     }
 
     private Class<?> getTypeClass() {
