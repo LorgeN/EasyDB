@@ -4,8 +4,6 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.Collection;
 import java.util.Map;
@@ -28,7 +26,7 @@ public class UniqueValueMultimap<K, V> implements Multimap<K, V> {
     }
 
     public void removeValue(V value) {
-        this.removeValue(value);
+        this.remove(this.getKey(value), value);
     }
 
     @Override
@@ -42,37 +40,34 @@ public class UniqueValueMultimap<K, V> implements Multimap<K, V> {
     }
 
     @Override
-    public boolean containsKey(@Nullable Object key) {
+    public boolean containsKey(Object key) {
         return keyToValues.containsKey(key);
     }
 
     @Override
-    public boolean containsValue(@Nullable Object value) {
+    public boolean containsValue(Object value) {
         return keyToValues.containsValue(value);
     }
 
     @Override
-    public boolean containsEntry(@Nullable Object key, @Nullable Object value) {
+    public boolean containsEntry(Object key, Object value) {
         return keyToValues.containsEntry(key, value);
     }
 
     @Override
-    @CanIgnoreReturnValue
-    public boolean put(@Nullable K key, @Nullable V value) {
+    public boolean put(K key, V value) {
         this.valueToKey.put(value, key);
         return keyToValues.put(key, value);
     }
 
     @Override
-    @CanIgnoreReturnValue
-    public boolean remove(@Nullable Object key, @Nullable Object value) {
+    public boolean remove(Object key, Object value) {
         this.valueToKey.remove(value);
         return keyToValues.remove(key, value);
     }
 
     @Override
-    @CanIgnoreReturnValue
-    public boolean putAll(@Nullable K key, Iterable<? extends V> values) {
+    public boolean putAll(K key, Iterable<? extends V> values) {
         for (V value : values) {
             this.valueToKey.put(value, key);
         }
@@ -81,7 +76,6 @@ public class UniqueValueMultimap<K, V> implements Multimap<K, V> {
     }
 
     @Override
-    @CanIgnoreReturnValue
     public boolean putAll(Multimap<? extends K, ? extends V> multimap) {
         for (Entry<? extends K, ? extends V> entry : multimap.entries()) {
             this.valueToKey.put(entry.getValue(), entry.getKey());
@@ -91,8 +85,7 @@ public class UniqueValueMultimap<K, V> implements Multimap<K, V> {
     }
 
     @Override
-    @CanIgnoreReturnValue
-    public Collection<V> replaceValues(@Nullable K key, Iterable<? extends V> iterable) {
+    public Collection<V> replaceValues(K key, Iterable<? extends V> iterable) {
         Collection<V> replaced = this.keyToValues.replaceValues(key, iterable);
         for (V value : replaced) {
             this.valueToKey.remove(value);
@@ -106,8 +99,7 @@ public class UniqueValueMultimap<K, V> implements Multimap<K, V> {
     }
 
     @Override
-    @CanIgnoreReturnValue
-    public Collection<V> removeAll(@Nullable Object key) {
+    public Collection<V> removeAll(Object key) {
         Collection<V> removed = keyToValues.removeAll(key);
         for (V value : removed) {
             this.valueToKey.remove(value);
@@ -123,7 +115,7 @@ public class UniqueValueMultimap<K, V> implements Multimap<K, V> {
     }
 
     @Override
-    public Collection<V> get(@Nullable K k) {
+    public Collection<V> get(K k) {
         return keyToValues.get(k);
     }
 
@@ -158,7 +150,7 @@ public class UniqueValueMultimap<K, V> implements Multimap<K, V> {
     }
 
     @Override
-    public boolean equals(@Nullable Object o) {
+    public boolean equals(Object o) {
         return keyToValues.equals(o);
     }
 
