@@ -1,6 +1,6 @@
 package org.tanberg.easydb.util;
 
-import org.tanberg.easydb.configuration.EasyDBConfiguration;
+import org.tanberg.easydb.EasyDB;
 import org.tanberg.easydb.field.FieldValue;
 
 import java.util.function.Supplier;
@@ -24,7 +24,7 @@ public class UtilLog {
     }
 
     private static Logger getLogger() {
-        return EasyDBConfiguration.getInstance().getLogger();
+        return EasyDB.getConfiguration().getLogger();
     }
 
     public static void severe(String msg) {
@@ -36,7 +36,7 @@ public class UtilLog {
     }
 
     public static void info(String msg) {
-        if (!EasyDBConfiguration.getInstance().isVerbose()) {
+        if (!EasyDB.getConfiguration().isVerbose()) {
             return;
         }
 

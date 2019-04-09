@@ -70,7 +70,7 @@ public enum DatabaseType {
         }
 
         // Useful for testing purposes
-        if (EasyDBConfiguration.getInstance().isInMemoryOnly()) {
+        if (EasyDB.getConfiguration().isInMemoryOnly()) {
             return MEMORY.newAccessor(null, manager, tableName);
         }
 

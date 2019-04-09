@@ -2,6 +2,7 @@ package org.tanberg.easydb.test.integration;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.tanberg.easydb.EasyDB;
 import org.tanberg.easydb.ItemRepository;
 import org.tanberg.easydb.Repositories;
 import org.tanberg.easydb.configuration.EasyDBConfiguration;
@@ -37,7 +38,7 @@ public class ExternalFieldIT {
 
     @Before
     public void setUp() throws Exception {
-        EasyDBConfiguration.getInstance().setVerbose(true);
+        EasyDB.getConfiguration().setVerbose(true);
     }
 
     @Test

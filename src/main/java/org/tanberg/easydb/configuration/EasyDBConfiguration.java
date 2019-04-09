@@ -11,19 +11,13 @@ import java.util.logging.SimpleFormatter;
 
 public class EasyDBConfiguration {
 
-    private static final EasyDBConfiguration INSTANCE = new EasyDBConfiguration();
-
     public static final SimpleDateFormat LOGGER_OUTPUT_FORMAT = new SimpleDateFormat("hh:mm:ss");
-
-    public static EasyDBConfiguration getInstance() {
-        return INSTANCE;
-    }
 
     private boolean verbose = false;
     private boolean inMemoryOnly = false;
     private Logger logger = Logger.getLogger("EasyDB");
 
-    private EasyDBConfiguration() {
+    public EasyDBConfiguration() {
         this.logger.setUseParentHandlers(false);
 
         ConsoleHandler handler = new ConsoleHandler();
