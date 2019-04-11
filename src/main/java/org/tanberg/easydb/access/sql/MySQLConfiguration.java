@@ -5,7 +5,7 @@ import org.tanberg.easydb.connection.configuration.ConnectionConfiguration;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
-public class SQLConfiguration extends ConnectionConfiguration {
+public class MySQLConfiguration extends ConnectionConfiguration {
 
     protected static final String HOST_KEY = "host";
     protected static final String DATABASE_KEY = "database";
@@ -13,8 +13,8 @@ public class SQLConfiguration extends ConnectionConfiguration {
     protected static final String PASSWORD_KEY = "password";
     protected static final String PORT_KEY = "port";
 
-    public SQLConfiguration(String host, String database, String user, String password, int port) {
-        super(DatabaseType.SQL);
+    public MySQLConfiguration(String host, String database, String user, String password, int port) {
+        super(DatabaseType.MYSQL);
 
         Validate.notBlank(host);
         Validate.notBlank(database);

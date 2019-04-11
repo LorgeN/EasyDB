@@ -16,24 +16,24 @@ import java.util.Set;
 public class IndexHelper {
 
     public static <T> Collection<WrappedIndex<T>> combineIndices(ItemProfile<T> profile, FieldValue<T>[] values) {
-        return combineIndices(profile, Arrays.stream(values)
+        return combineFieldIndices(profile, Arrays.stream(values)
           .map(FieldValue::getField)
           .toArray(PersistentField[]::new));
     }
 
     public static <T> Collection<WrappedIndex<T>> combineIndices(ItemProfile<T> profile, Collection<SimpleRequirement> requirements) {
-        return combineIndices(profile, requirements.stream()
+        return combineFieldIndices(profile, requirements.stream()
           .map(SimpleRequirement::getField)
           .toArray(PersistentField[]::new));
     }
 
     public static <T> Collection<WrappedIndex<T>> combineIndices(ItemProfile<T> profile, SimpleRequirement[] requirements) {
-        return combineIndices(profile, Arrays.stream(requirements)
+        return combineFieldIndices(profile, Arrays.stream(requirements)
           .map(SimpleRequirement::getField)
           .toArray(PersistentField[]::new));
     }
 
-    public static <T> Collection<WrappedIndex<T>> combineIndices(ItemProfile<T> profile, PersistentField<T>[] fields) {
+    public static <T> Collection<WrappedIndex<T>> combineFieldIndices(ItemProfile<T> profile, PersistentField<T>[] fields) {
         if (profile.areKeys(fields)) {
             return null;
         }

@@ -34,7 +34,7 @@ public class ExternalCollectionQueryHelper implements QueryHelper {
             return;
         }
 
-        List<Response> responses = this.profile.newQuery(repository, event.getEntity()).findAll();
+        List<Response> responses = this.profile.newQuery(event.getEntity()).findAll();
         collection.addAll(responses.stream().map(response -> this.profile.extractValue(response)).collect(Collectors.toList()));
 
         event.getEntity().getOrCreateValue(this.getField().getName()).setValue(collection);
@@ -47,7 +47,7 @@ public class ExternalCollectionQueryHelper implements QueryHelper {
         }
 
         Query baseQuery = event.getQuery();
-        this.profile.newQuery(repository, baseQuery).delete();
+        this.profile.newQuery(baseQuery).delete();
     }
 
     @Override
@@ -58,18 +58,18 @@ public class ExternalCollectionQueryHelper implements QueryHelper {
 
         Query baseQuery = event.getQuery();
 
-        this.profile.newQuery(repository, baseQuery).delete(); // Removes any elements that have been removed from the list
+        this.profile.newQuery(baseQuery).delete(); // Removes any elements that have been removed from the list
 
         Collection<?> collection = (Collection<?>) baseQuery.getValue(this.getField()).getValue();
         // Minor speed-up
         if (!this.profile.needsToProvideIndex()) {
-            collection.forEach(value -> this.profile.save(repository, baseQuery, null, value));
+            collection.forEach(value -> this.profile.save(baseQuery, null, value));
             return;
         }
 
         Iterator<?> iterator = collection.iterator();
         AtomicInteger index = new AtomicInteger(0);
-        iterator.forEachRemaining(value -> this.profile.save(repository, baseQuery, index.getAndIncrement(), value));
+        iterator.forEachRemaining(value -> this.profile.save(baseQuery, index.getAndIncrement(), value));
     }
 
     // Internals

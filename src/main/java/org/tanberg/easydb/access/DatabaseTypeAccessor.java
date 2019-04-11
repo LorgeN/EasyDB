@@ -1,5 +1,6 @@
 package org.tanberg.easydb.access;
 
+import org.tanberg.easydb.connection.configuration.ConnectionConfiguration;
 import org.tanberg.easydb.field.PersistentField;
 import org.tanberg.easydb.profile.ItemProfile;
 import org.tanberg.easydb.query.Query;
@@ -18,6 +19,8 @@ public interface DatabaseTypeAccessor<T> {
     ItemProfile<T> getProfile();
 
     boolean isSearchable(PersistentField<T> field);
+
+    ConnectionConfiguration getConfiguration();
 
     /**
      * Executes the database setup. Automatically called, but can (using this

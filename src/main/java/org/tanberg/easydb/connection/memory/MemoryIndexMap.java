@@ -1,4 +1,4 @@
-package org.tanberg.easydb.access.memory;
+package org.tanberg.easydb.connection.memory;
 
 import com.google.common.collect.Lists;
 import org.tanberg.easydb.WrappedIndex;

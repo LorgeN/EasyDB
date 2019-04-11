@@ -1,29 +1,14 @@
-package org.tanberg.easydb.test.item;
+package org.tanberg.easydb.test.mock.item;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.tanberg.easydb.DeserializerConstructor;
 import org.tanberg.easydb.Index;
 import org.tanberg.easydb.Key;
 import org.tanberg.easydb.Options;
 import org.tanberg.easydb.StoredItem;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
-
-import java.util.concurrent.ThreadLocalRandom;
 
 public class TestItem implements StoredItem {
-
-    public static TestItem getRandom() {
-        return new TestItem(randomString(), randomString(), randomString(), randomString(), ThreadLocalRandom.current().nextInt(100) + 5);
-    }
-
-    public static TestItem getRandom(String name) {
-        return new TestItem(name, randomString(), randomString(), randomString(), ThreadLocalRandom.current().nextInt(100) + 5);
-    }
-
-    private static String randomString() {
-        return RandomStringUtils.randomAlphabetic(ThreadLocalRandom.current().nextInt(6) + 5);
-    }
 
     @Key(autoIncrement = true)
     private int id;
@@ -114,9 +99,13 @@ public class TestItem implements StoredItem {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
+        if (this == o) {
+            return true;
+        }
 
-        if (!(o instanceof TestItem)) return false;
+        if (!(o instanceof TestItem)) {
+            return false;
+        }
 
         TestItem testItem = (TestItem) o;
 

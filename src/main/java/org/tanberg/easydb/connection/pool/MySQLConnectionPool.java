@@ -3,7 +3,7 @@ package org.tanberg.easydb.connection.pool;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.tanberg.easydb.DatabaseType;
-import org.tanberg.easydb.access.sql.SQLConfiguration;
+import org.tanberg.easydb.access.sql.MySQLConfiguration;
 import org.tanberg.easydb.connection.ConnectionPool;
 import org.tanberg.easydb.connection.configuration.ConnectionConfiguration;
 
@@ -11,17 +11,17 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-public class SQLConnectionPool implements ConnectionPool<Connection> {
+public class MySQLConnectionPool implements ConnectionPool<Connection> {
 
     private final HikariDataSource dataSource;
-    private final SQLConfiguration configuration;
+    private final MySQLConfiguration configuration;
 
-    public SQLConnectionPool(ConnectionConfiguration configuration) {
-        if (!(configuration instanceof SQLConfiguration)) {
+    public MySQLConnectionPool(ConnectionConfiguration configuration) {
+        if (!(configuration instanceof MySQLConfiguration)) {
             throw new IllegalArgumentException("Not an SQL configuration!");
         }
 
-        SQLConfiguration sqlConfig = this.configuration = (SQLConfiguration) configuration;
+        MySQLConfiguration sqlConfig = this.configuration = (MySQLConfiguration) configuration;
 
         String host = sqlConfig.getHost();
         int port = sqlConfig.getPort();
@@ -48,7 +48,7 @@ public class SQLConnectionPool implements ConnectionPool<Connection> {
 
     @Override
     public DatabaseType getType() {
-        return DatabaseType.SQL;
+        return DatabaseType.MYSQL;
     }
 
     @Override

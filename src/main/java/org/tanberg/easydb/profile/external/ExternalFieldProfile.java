@@ -1,8 +1,11 @@
 package org.tanberg.easydb.profile.external;
 
 import com.google.common.collect.Lists;
+import org.tanberg.easydb.DatabaseType;
 import org.tanberg.easydb.ItemRepository;
+import org.tanberg.easydb.Repositories;
 import org.tanberg.easydb.access.ListenableTypeAccessor;
+import org.tanberg.easydb.connection.configuration.ConnectionConfiguration;
 import org.tanberg.easydb.field.PersistentField;
 import org.tanberg.easydb.interact.external.External;
 import org.tanberg.easydb.interact.external.ExternalCollectionQueryHelper;
@@ -20,8 +23,8 @@ import org.tanberg.easydb.query.ValueHolder;
 import org.tanberg.easydb.query.req.RequirementBuilder;
 import org.tanberg.easydb.query.response.Response;
 import org.tanberg.easydb.util.UtilLog;
-import org.tanberg.easydb.util.reflection.UtilType;
 import org.tanberg.easydb.util.reflection.UtilField;
+import org.tanberg.easydb.util.reflection.UtilType;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -47,6 +50,7 @@ public class ExternalFieldProfile<T> {
     private boolean primitiveIndex;
     private boolean primitiveValue;
     private List<KeyRelation> keyRelations;
+    private ItemRepository<?> repository;
 
     public ExternalFieldProfile(ListenableTypeAccessor<T> accessor, PersistentField<T> field, ProfilerContext context, ProfilerStrategy strategy) {
         this.accessor = accessor;
@@ -54,6 +58,20 @@ public class ExternalFieldProfile<T> {
         this.context = context;
         this.strategy = strategy;
         this.keyRelations = Lists.newArrayList();
+    }
+
+    public ItemRepository<?> getRepository() {
+        if (this.repository != null) {
+            return this.repository;
+        }
+
+        ConnectionConfiguration config = this.accessor.getConfiguration();
+        DatabaseType type = DatabaseType.fromAccessor(this.accessor);
+        String table = this.getField().getExternalTable();
+        Class typeClass = this.getTypeClass();
+        Class repoClass = this.getField().getRepository();
+        ItemProfile profile = this.getProfile();
+        return this.repository = Repositories.createRepository(config, type, table, typeClass, repoClass, profile);
     }
 
     public QueryHelper getNewQueryHelper() {
@@ -105,8 +123,8 @@ public class ExternalFieldProfile<T> {
         return this.getStrategy() == ProfilerStrategy.DECLARING_KEYS_WITH_INDEX;
     }
 
-    public void save(ItemRepository repository, ValueHolder<T> valueHolder, Object index, Object value) {
-        QueryBuilder builder = repository.newQuery();
+    public void save(ValueHolder<T> valueHolder, Object index, Object value) {
+        QueryBuilder builder = this.getRepository().newQuery();
 
         switch (this.getStrategy()) {
             case DIRECT_USE:
@@ -174,13 +192,13 @@ public class ExternalFieldProfile<T> {
         }
     }
 
-    public QueryBuilder<?> newQuery(ItemRepository repository, ValueHolder<T> valueHolder) {
+    public QueryBuilder<?> newQuery(ValueHolder<T> valueHolder) {
         this.info("Computing query from response " + valueHolder + "...");
-        RequirementBuilder<?> builder = repository.newQuery().where();
+        RequirementBuilder<?> builder = this.getRepository().newQuery().where();
 
         for (KeyRelation keyRelation : this.keyRelations) {
             Object value = valueHolder.getValue(keyRelation.getNameDeclaringClass()).getValue();
-            builder.equals(keyRelation.getNameStoredClass(), value);
+            builder.andEquals(keyRelation.getNameStoredClass(), value);
         }
 
         return builder.closeAll();

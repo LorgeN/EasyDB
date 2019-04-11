@@ -18,7 +18,7 @@ public class ExternalFieldQueryHelper implements QueryHelper {
 
     @Override
     public void handle(ItemRepository repository, AccessorRespondEvent event) {
-        Response response = this.profile.newQuery(repository, event.getEntity()).findFirst();
+        Response response = this.profile.newQuery(event.getEntity()).findFirst();
         response.getOrCreateValue(this.getField().getName())
           .setValue(this.profile.extractValue(response));
     }
@@ -29,7 +29,7 @@ public class ExternalFieldQueryHelper implements QueryHelper {
             return;
         }
 
-        this.profile.newQuery(repository, event.getQuery()).delete();
+        this.profile.newQuery(event.getQuery()).delete();
     }
 
     @Override
@@ -39,7 +39,7 @@ public class ExternalFieldQueryHelper implements QueryHelper {
         }
 
         Object value = event.getQuery().getValue(this.getField()).getValue();
-        this.profile.save(repository, event.getQuery(), null, value);
+        this.profile.save(event.getQuery(), null, value);
     }
 
     // Internals

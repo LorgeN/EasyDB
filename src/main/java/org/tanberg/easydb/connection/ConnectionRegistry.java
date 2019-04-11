@@ -5,7 +5,7 @@ import com.google.common.collect.Maps;
 import org.tanberg.easydb.DatabaseType;
 import org.tanberg.easydb.connection.configuration.ConnectionConfiguration;
 import org.tanberg.easydb.connection.pool.RedisConnectionPool;
-import org.tanberg.easydb.connection.pool.SQLConnectionPool;
+import org.tanberg.easydb.connection.pool.MySQLConnectionPool;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -15,7 +15,7 @@ import java.util.Map;
 public class ConnectionRegistry {
 
     private static final Map<DatabaseType, Class<? extends ConnectionPool<?>>> POOL_CLASSES = ImmutableMap.<DatabaseType, Class<? extends ConnectionPool<?>>>builder()
-      .put(DatabaseType.SQL, SQLConnectionPool.class)
+      .put(DatabaseType.MYSQL, MySQLConnectionPool.class)
       .put(DatabaseType.REDIS, RedisConnectionPool.class)
       .build();
 

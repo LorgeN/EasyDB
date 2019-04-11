@@ -26,7 +26,7 @@ public class ExternalMapQueryHelper implements QueryHelper {
 
         assert map != null;
 
-        Collection<Response> responses = this.profile.newQuery(repository, event.getEntity()).findAll();
+        Collection<Response> responses = this.profile.newQuery(event.getEntity()).findAll();
 
         for (Response entity : responses) {
             Object key = this.profile.extractKey(entity);
@@ -44,7 +44,7 @@ public class ExternalMapQueryHelper implements QueryHelper {
             return;
         }
 
-        this.profile.newQuery(repository, event.getQuery()).delete();
+        this.profile.newQuery(event.getQuery()).delete();
     }
 
     @Override
@@ -53,9 +53,9 @@ public class ExternalMapQueryHelper implements QueryHelper {
             return;
         }
 
-        this.profile.newQuery(repository, event.getQuery()).delete();
+        this.profile.newQuery(event.getQuery()).delete();
         Map<?, ?> map = (Map) event.getQuery().getValue(this.getField()).getValue();
-        map.forEach((key, val) -> this.profile.save(repository, event.getQuery(), key, val));
+        map.forEach((key, val) -> this.profile.save(event.getQuery(), key, val));
     }
 
     // Internals

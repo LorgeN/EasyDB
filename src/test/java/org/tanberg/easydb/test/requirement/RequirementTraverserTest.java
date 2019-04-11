@@ -8,7 +8,7 @@ import org.tanberg.easydb.query.req.RequirementBuilder;
 import org.tanberg.easydb.query.req.SimpleRequirement;
 import org.tanberg.easydb.query.traverse.RequirementCase;
 import org.tanberg.easydb.query.traverse.RequirementTraverser;
-import org.tanberg.easydb.test.item.TestItem;
+import org.tanberg.easydb.test.mock.item.TestItem;
 import org.tanberg.easydb.util.reflection.UtilField;
 import org.junit.Test;
 import org.junit.runner.RunWith;

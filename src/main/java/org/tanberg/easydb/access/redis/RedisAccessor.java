@@ -11,6 +11,7 @@ import org.tanberg.easydb.Repositories;
 import org.tanberg.easydb.WrappedIndex;
 import org.tanberg.easydb.access.ListenableTypeAccessor;
 import org.tanberg.easydb.connection.ConnectionRegistry;
+import org.tanberg.easydb.connection.configuration.ConnectionConfiguration;
 import org.tanberg.easydb.exception.DeleteQueryException;
 import org.tanberg.easydb.exception.DropException;
 import org.tanberg.easydb.exception.FindQueryException;
@@ -85,6 +86,11 @@ public class RedisAccessor<T> extends ListenableTypeAccessor<T> {
           .toArray(RedisJoinWrapper[]::new);
 
         this.setUp();
+    }
+
+    @Override
+    public ConnectionConfiguration getConfiguration() {
+        return this.configuration;
     }
 
     private void info(String msg) {

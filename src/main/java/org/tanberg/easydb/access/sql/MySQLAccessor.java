@@ -7,6 +7,7 @@ import org.tanberg.easydb.ItemRepository;
 import org.tanberg.easydb.WrappedIndex;
 import org.tanberg.easydb.access.ListenableTypeAccessor;
 import org.tanberg.easydb.connection.ConnectionRegistry;
+import org.tanberg.easydb.connection.configuration.ConnectionConfiguration;
 import org.tanberg.easydb.exception.DeleteQueryException;
 import org.tanberg.easydb.exception.DropException;
 import org.tanberg.easydb.exception.FindQueryException;
@@ -37,18 +38,23 @@ import java.util.Map.Entry;
  *
  * @param <T> The type this accessor handles
  */
-public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
+public class MySQLAccessor<T> extends ListenableTypeAccessor<T> {
 
     private final String table;
-    private final SQLConfiguration sqlConfig;
+    private final MySQLConfiguration configuration;
 
-    public SQLAccessor(SQLConfiguration sqlConfig, ItemRepository<T> repository, String table) {
+    public MySQLAccessor(MySQLConfiguration configuration, ItemRepository<T> repository, String table) {
         super(repository);
-        this.sqlConfig = sqlConfig;
+        this.configuration = configuration;
 
         this.table = table;
 
         this.setUp();
+    }
+
+    @Override
+    public ConnectionConfiguration getConfiguration() {
+        return this.configuration;
     }
 
     /**
@@ -56,7 +62,7 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
      * {@link DataSource data source}.
      */
     public Connection getConnection() {
-        return ConnectionRegistry.getInstance().<Connection>getPool(this.sqlConfig).getConnection();
+        return ConnectionRegistry.getInstance().<Connection>getPool(this.configuration).getConnection();
     }
 
     /**
@@ -148,7 +154,7 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
                 "" +
                 "END");
 
-            String database = "\"" + this.sqlConfig.getDatabase() + "\"";
+            String database = "\"" + this.configuration.getDatabase() + "\"";
 
             for (WrappedIndex<T> index : indices) {
                 if (index.getFields().length != 1) {
@@ -204,7 +210,7 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
     public int getNextAutoIncrement() {
         try (Connection connection = this.getConnection()) {
             PreparedStatement statement = connection.prepareStatement("SELECT `AUTO_INCREMENT` FROM INFORMATION_SCHEMA.TABLES " +
-              "WHERE TABLE_SCHEMA='" + this.sqlConfig.getDatabase() + "' AND TABLE_NAME='" + this.table + "';");
+              "WHERE TABLE_SCHEMA='" + this.configuration.getDatabase() + "' AND TABLE_NAME='" + this.table + "';");
 
             ResultSet resultSet = statement.executeQuery();
             return (resultSet == null || !resultSet.next()) ? 2 : (resultSet.getInt(1));
@@ -223,7 +229,7 @@ public class SQLAccessor<T> extends ListenableTypeAccessor<T> {
     public int getCurrentAutoIncrement() {
         try (Connection connection = this.getConnection()) {
             String statementStr = "SELECT `AUTO_INCREMENT` FROM INFORMATION_SCHEMA.TABLES " +
-              "WHERE TABLE_SCHEMA='" + this.sqlConfig.getDatabase() + "' AND TABLE_NAME='" + this.table + "';";
+              "WHERE TABLE_SCHEMA='" + this.configuration.getDatabase() + "' AND TABLE_NAME='" + this.table + "';";
 
             PreparedStatement statement = connection.prepareStatement(statementStr);
 

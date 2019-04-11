@@ -4,22 +4,21 @@ import org.tanberg.easydb.access.DatabaseTypeAccessor;
 import org.tanberg.easydb.access.memory.MemoryAccessor;
 import org.tanberg.easydb.access.redis.RedisAccessor;
 import org.tanberg.easydb.access.redis.RedisConfiguration;
-import org.tanberg.easydb.access.sql.SQLAccessor;
-import org.tanberg.easydb.access.sql.SQLConfiguration;
-import org.tanberg.easydb.configuration.EasyDBConfiguration;
+import org.tanberg.easydb.access.sql.MySQLAccessor;
+import org.tanberg.easydb.access.sql.MySQLConfiguration;
 import org.tanberg.easydb.connection.ConnectionRegistry;
 import org.tanberg.easydb.connection.configuration.ConnectionConfiguration;
 
 public enum DatabaseType {
-    SQL {
+    MYSQL {
         @Override
         public <T extends DatabaseTypeAccessor> boolean isAccessor(Class<T> accessor) {
-            return SQLAccessor.class.isAssignableFrom(accessor);
+            return MySQLAccessor.class.isAssignableFrom(accessor);
         }
 
         @Override
-        public <T> DatabaseTypeAccessor<T> newAccessor(ConnectionConfiguration configuration, DatabaseRepository<T> manager, String tableName) {
-            return new SQLAccessor<>((SQLConfiguration) configuration, manager, tableName);
+        public <T> DatabaseTypeAccessor<T> newAccessor(ConnectionConfiguration configuration, DatabaseRepository<T> repository, String tableName) {
+            return new MySQLAccessor<>((MySQLConfiguration) configuration, repository, tableName);
         }
     },
     MONGODB {
@@ -29,7 +28,7 @@ public enum DatabaseType {
         }
 
         @Override
-        public <T> DatabaseTypeAccessor<T> newAccessor(ConnectionConfiguration configuration, DatabaseRepository<T> manager, String tableName) {
+        public <T> DatabaseTypeAccessor<T> newAccessor(ConnectionConfiguration configuration, DatabaseRepository<T> repository, String tableName) {
             return null; // TODO
         }
     },
@@ -40,8 +39,8 @@ public enum DatabaseType {
         }
 
         @Override
-        public <T> DatabaseTypeAccessor<T> newAccessor(ConnectionConfiguration configuration, DatabaseRepository<T> manager, String tableName) {
-            return new RedisAccessor<>((RedisConfiguration) configuration, manager, tableName);
+        public <T> DatabaseTypeAccessor<T> newAccessor(ConnectionConfiguration configuration, DatabaseRepository<T> repository, String tableName) {
+            return new RedisAccessor<>((RedisConfiguration) configuration, repository, tableName);
         }
     },
     MEMORY {
@@ -51,8 +50,8 @@ public enum DatabaseType {
         }
 
         @Override
-        public <T> DatabaseTypeAccessor<T> newAccessor(ConnectionConfiguration configuration, DatabaseRepository<T> manager, String tableName) {
-            return null; // TODO
+        public <T> DatabaseTypeAccessor<T> newAccessor(ConnectionConfiguration configuration, DatabaseRepository<T> repository, String tableName) {
+            return new MemoryAccessor<>(tableName, repository);
         }
     };
 
@@ -62,7 +61,7 @@ public enum DatabaseType {
 
     public abstract <T extends DatabaseTypeAccessor> boolean isAccessor(Class<T> accessor);
 
-    public abstract <T> DatabaseTypeAccessor<T> newAccessor(ConnectionConfiguration configuration, DatabaseRepository<T> manager, String tableName);
+    public abstract <T> DatabaseTypeAccessor<T> newAccessor(ConnectionConfiguration configuration, DatabaseRepository<T> repository, String tableName);
 
     public <T> DatabaseTypeAccessor<T> newAccessor(DatabaseRepository<T> manager, String tableName) {
         if (this == MEMORY) {

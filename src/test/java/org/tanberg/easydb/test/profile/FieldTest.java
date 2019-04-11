@@ -4,7 +4,7 @@ import com.google.common.collect.Lists;
 import org.tanberg.easydb.DataType;
 import org.tanberg.easydb.field.FieldSerializer;
 import org.tanberg.easydb.field.PersistentField;
-import org.tanberg.easydb.test.item.TestItem;
+import org.tanberg.easydb.test.mock.item.TestItem;
 import org.tanberg.easydb.util.reflection.UtilField;
 import org.junit.Test;
 import org.junit.runner.RunWith;

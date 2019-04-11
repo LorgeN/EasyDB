@@ -3,7 +3,7 @@ package org.tanberg.easydb.test.profile;
 import org.tanberg.easydb.field.PersistentField;
 import org.tanberg.easydb.profile.ItemProfile;
 import org.tanberg.easydb.WrappedIndex;
-import org.tanberg.easydb.test.item.TestItem;
+import org.tanberg.easydb.test.mock.item.TestItem;
 import org.tanberg.easydb.util.reflection.UtilField;
 import org.junit.Test;
 

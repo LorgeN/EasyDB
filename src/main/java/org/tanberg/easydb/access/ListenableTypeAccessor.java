@@ -109,7 +109,7 @@ public abstract class ListenableTypeAccessor<T> implements DatabaseTypeAccessor<
         return responses;
     }
 
-    public abstract List<Response<T>> findAllInternal(Query<T> query);
+    protected abstract List<Response<T>> findAllInternal(Query<T> query);
 
     @Override
     public void saveOrUpdate(Query<T> query) {
@@ -119,7 +119,7 @@ public abstract class ListenableTypeAccessor<T> implements DatabaseTypeAccessor<
         this.getEventManager().callEvent(event);
     }
 
-    public abstract void saveOrUpdateInternal(Query<T> query);
+    protected abstract void saveOrUpdateInternal(Query<T> query);
 
     @Override
     public void delete(Query<T> query) {
@@ -129,7 +129,7 @@ public abstract class ListenableTypeAccessor<T> implements DatabaseTypeAccessor<
         this.getEventManager().callEvent(event);
     }
 
-    public abstract void deleteInternal(Query<T> query);
+    protected abstract void deleteInternal(Query<T> query);
 
     @Override
     public void drop() {
@@ -139,5 +139,5 @@ public abstract class ListenableTypeAccessor<T> implements DatabaseTypeAccessor<
         this.getEventManager().callEvent(event);
     }
 
-    public abstract void dropInternal();
+    protected abstract void dropInternal();
 }
