@@ -6,18 +6,13 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.ArrayUtils;
 import org.tanberg.easydb.WrappedIndex;
-import org.tanberg.easydb.exception.DeleteQueryException;
 import org.tanberg.easydb.exception.DropException;
-import org.tanberg.easydb.exception.FindQueryException;
-import org.tanberg.easydb.exception.SaveQueryException;
 import org.tanberg.easydb.field.FieldValue;
 import org.tanberg.easydb.field.PersistentField;
 import org.tanberg.easydb.profile.ItemProfile;
 import org.tanberg.easydb.query.Operator;
-import org.tanberg.easydb.query.Query;
 import org.tanberg.easydb.query.req.QueryRequirement;
 import org.tanberg.easydb.query.req.SimpleRequirement;
-import org.tanberg.easydb.query.response.Response;
 import org.tanberg.easydb.query.traverse.RequirementCase;
 import org.tanberg.easydb.query.traverse.RequirementTraverser;
 import org.tanberg.easydb.util.IndexHelper;
@@ -27,11 +22,14 @@ import org.tanberg.easydb.util.ValueHelper;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MemoryTable<T> {
 
     private final String name;
+    private final AtomicInteger autoIncrement;
     private final ItemProfile<T> profile;
     private final Map<ValueContainer, ValueContainer> keyToValueMap;
     private final Map<WrappedIndex<T>, MemoryIndexMap<T>> indexMaps;
@@ -44,6 +42,7 @@ public class MemoryTable<T> {
         this.keyToValueMap = Maps.newConcurrentMap();
         this.indexMaps = Maps.newConcurrentMap();
         this.unsafeAccessor = new UnsafeMemoryAccessor<>(this.keyToValueMap, this.indexMaps);
+        this.autoIncrement = new AtomicInteger(1);
 
         for (WrappedIndex<T> index : profile.getIndices()) {
             MemoryIndexMap<T> indexMap = new MemoryIndexMap<>(profile, index);
@@ -59,95 +58,97 @@ public class MemoryTable<T> {
         return profile;
     }
 
-
     public UnsafeMemoryAccessor<T> getUnsafeAccessor() {
         return unsafeAccessor;
     }
 
-    public Response<T> findFirstInternal(Query<T> query) {
-        try {
-            if (query.getRequirement() == null) {
-                ValueContainer value = Iterables.getFirst(this.keyToValueMap.values(), null);
-                if (value == null) {
-                    return new Response<>(this.getProfile());
-                }
-
-                return this.toResponse(value);
+    public FieldValue<T>[] findFirst(QueryRequirement requirement) {
+        if (requirement == null) {
+            ValueContainer container = Iterables.getFirst(this.keyToValueMap.values(), null);
+            if (container == null) {
+                return null;
             }
 
-            ValueContainer key = this.getFirstKey(query.getRequirement());
-            return this.toResponseFromKey(key);
-        } catch (Throwable t) {
-            throw new FindQueryException(t, query);
+            return this.toValues(container);
+        }
+
+        ValueContainer container = this.getFirstKey(requirement);
+        if (container == null) {
+            return null;
+        }
+
+        return this.toValues(this.keyToValueMap.get(container));
+    }
+
+    public List<FieldValue<T>[]> findAll(QueryRequirement requirement) {
+        List<FieldValue<T>[]> list = Lists.newArrayList();
+        if (requirement == null) {
+            for (ValueContainer value : this.keyToValueMap.values()) {
+                list.add(this.toValues(value));
+            }
+        } else {
+            for (ValueContainer key : this.getKeys(requirement)) {
+                list.add(this.toValues(this.keyToValueMap.get(key)));
+            }
+        }
+
+        return list;
+    }
+
+    public void save(Optional<T> instance, FieldValue<T>[] values, QueryRequirement requirement) {
+        if (requirement == null) {
+            PersistentField<T> autoIncField = this.getProfile().getAutoIncrementField();
+            if (autoIncField != null) {
+                FieldValue<T> autoIncVal = ValueHelper.getValue(values, autoIncField);
+                autoIncVal.setValue(this.autoIncrement.getAndIncrement());
+
+                instance.ifPresent(value -> autoIncField.set(value, autoIncVal.getValue()));
+            }
+
+            ValueContainer key = ValueContainer.getKeys(this.getProfile(), values);
+            this.removeFromIndices(key);
+
+            ValueContainer value = this.toValues(values);
+            this.keyToValueMap.put(key, value);
+            this.addToIndices(values);
+            return;
+        }
+
+        int[] indices = new int[values.length];
+
+        PersistentField<T>[] storedFields = this.getProfile().getStoredFields();
+        for (int i = 0; i < values.length; i++) {
+            indices[i] = ArrayUtils.indexOf(storedFields, values[i].getField());
+        }
+
+        Collection<ValueContainer> keys = this.getKeys(requirement);
+        for (ValueContainer key : keys) {
+            ValueContainer value = this.keyToValueMap.remove(key);
+            this.removeFromIndices(key);
+
+            for (int i = 0; i < indices.length; i++) {
+                value.setValue(indices[i], values[i].getValue());
+            }
+
+            this.keyToValueMap.put(key, value);
+            this.addToIndices(this.toValues(value));
         }
     }
 
-    public List<Response<T>> findAllInternal(Query<T> query) {
-        try {
-            if (query.getRequirement() == null) {
-                return this.toResponses(this.keyToValueMap.values());
-            }
+    public void delete(QueryRequirement requirement) {
+        if (requirement == null) {
+            this.drop();
+            return;
+        }
 
-            return this.toResponsesFromKeys(this.getKeys(query.getRequirement()));
-        } catch (Throwable t) {
-            throw new FindQueryException(t, query);
+        Collection<ValueContainer> keys = this.getKeys(requirement);
+        for (ValueContainer key : keys) {
+            ValueContainer remove = this.keyToValueMap.remove(key);
+            this.removeFromIndices(remove);
         }
     }
 
-    public void saveOrUpdateInternal(Query<T> query) {
-        try {
-            if (query.getRequirement() == null) {
-                ValueContainer key = ValueContainer.getKeys(this.getProfile(), query.getValues());
-                this.removeFromIndices(key);
-
-                ValueContainer value = this.toValues(query.getValues());
-                this.keyToValueMap.put(key, value);
-                this.addToIndices(query.getValues());
-                return;
-            }
-
-            FieldValue<T>[] newValues = query.getValues();
-            int[] indices = new int[newValues.length];
-
-            PersistentField<T>[] storedFields = this.getProfile().getStoredFields();
-            for (int i = 0; i < newValues.length; i++) {
-                indices[i] = ArrayUtils.indexOf(storedFields, newValues[i].getField());
-            }
-
-            Collection<ValueContainer> keys = this.getKeys(query.getRequirement());
-            for (ValueContainer key : keys) {
-                ValueContainer value = this.keyToValueMap.remove(key);
-                this.removeFromIndices(key);
-
-                for (int i = 0; i < indices.length; i++) {
-                    value.setValue(indices[i], newValues[i].getValue());
-                }
-
-                this.keyToValueMap.put(key, value);
-                this.addToIndices(this.toValues(value));
-            }
-        } catch (Throwable t) {
-            throw new SaveQueryException(t, query);
-        }
-    }
-
-    public void deleteInternal(Query<T> query) {
-        try {
-            if (query.getRequirement() == null) {
-                this.dropInternal();
-            }
-
-            Collection<ValueContainer> keys = this.getKeys(query.getRequirement());
-            for (ValueContainer key : keys) {
-                ValueContainer remove = this.keyToValueMap.remove(key);
-                this.removeFromIndices(remove);
-            }
-        } catch (Throwable t) {
-            throw new DeleteQueryException(t, query);
-        }
-    }
-
-    public void dropInternal() {
+    public void drop() {
         try {
             this.keyToValueMap.clear();
             this.indexMaps.values().forEach(MemoryIndexMap::drop);
@@ -174,12 +175,6 @@ public class MemoryTable<T> {
         }
     }
 
-    private void removeFromIndices(FieldValue<T>[] values) {
-        for (MemoryIndexMap<T> index : this.indexMaps.values()) {
-            index.remove(values);
-        }
-    }
-
     private FieldValue<T>[] toValues(ValueContainer container) {
         if (container == null) {
             return null;
@@ -196,14 +191,6 @@ public class MemoryTable<T> {
         return values;
     }
 
-    private Response<T> toResponse(ValueContainer container) {
-        return new Response<>(this.getProfile(), this.toValues(container));
-    }
-
-    private Response<T> toResponseFromKey(ValueContainer key) {
-        return this.toResponse(this.keyToValueMap.get(key));
-    }
-
     private ValueContainer toValues(FieldValue<T>[] values) {
         PersistentField<T>[] fields = this.getProfile().getStoredFields();
         Object[] valueArray = new Object[fields.length];
@@ -213,24 +200,6 @@ public class MemoryTable<T> {
         }
 
         return new ValueContainer(valueArray);
-    }
-
-    private List<Response<T>> toResponses(Collection<ValueContainer> values) {
-        List<Response<T>> list = Lists.newArrayList();
-        for (ValueContainer value : values) {
-            list.add(this.toResponse(value));
-        }
-
-        return list;
-    }
-
-    private List<Response<T>> toResponsesFromKeys(Collection<ValueContainer> keys) {
-        List<Response<T>> list = Lists.newArrayList();
-        for (ValueContainer key : keys) {
-            list.add(this.toResponseFromKey(key));
-        }
-
-        return list;
     }
 
     private ValueContainer getFirstKey(QueryRequirement requirement) {

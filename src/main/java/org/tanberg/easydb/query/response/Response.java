@@ -20,14 +20,14 @@ import java.util.Optional;
  */
 public class Response<T> implements ValueHolder<T> {
 
-    private ItemProfile<T> profile; // The profile of the item
+    private final ItemProfile<T> profile; // The profile of the item
     private FieldValue<T>[] values; // The loaded values
     // Use an optional here so that we know if we've tried to create it before,
     // and in that case don't try again, wasting resources
     private Optional<T> createdInstance; // The created instance (If created)
 
     public Response(ItemProfile<T> profile) {
-        this.profile = profile;
+        this(profile, null);
     }
 
     public Response(ItemProfile<T> profile, FieldValue<T>[] values) {
