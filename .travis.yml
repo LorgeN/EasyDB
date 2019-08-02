@@ -7,11 +7,8 @@ notifications:
   email: false
 
 before_deploy:
-  - mvn package
+  - mvn clean
   - zip -r ${TRAVIS_TAG}.zip target/*.jar
-
-script:
-  - mvn clean compile package install
 
 after_success:
   - echo "<settings><servers><server><id>nexus-snapshots</id><username>\${CLI_DEPLOY_USERNAME}</username> <password>\${CLI_DEPLOY_PASSWORD}</password></server></servers></settings>" > ~/settings.xml
