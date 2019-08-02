@@ -17,7 +17,7 @@
         <libs.dir>${project.basedir}${file.separator}libs</libs.dir>
         <package.dir>${project.build.directory}</package.dir>
         <package.name>${project.build.finalName}</package.name>
-        <skip.unit.tests>false</skip.unit.tests>
+        <skip.unit.tests>true</skip.unit.tests>
         <skip.integration.tests>true</skip.integration.tests>
     </properties>
 
