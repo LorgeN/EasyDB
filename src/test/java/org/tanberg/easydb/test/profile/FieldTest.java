@@ -4,7 +4,7 @@ import com.google.common.collect.Lists;
 import org.tanberg.easydb.DataType;
 import org.tanberg.easydb.field.FieldSerializer;
 import org.tanberg.easydb.field.PersistentField;
-import org.tanberg.easydb.test.mock.item.TestItem;
+import org.tanberg.easydb.test.mock.item.SimpleFieldsItem;
 import org.tanberg.easydb.util.reflection.UtilField;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -52,8 +52,8 @@ public class FieldTest {
 
     @Test
     public void fieldTest() {
-        Field classField = UtilField.getField(TestItem.class, this.fieldName);
-        PersistentField<TestItem> field = new PersistentField<>(0, TestItem.class, classField);
+        Field classField = UtilField.getField(SimpleFieldsItem.class, this.fieldName);
+        PersistentField<SimpleFieldsItem> field = new PersistentField<>(0, SimpleFieldsItem.class, classField);
 
         assertThat(field.getName()).isEqualTo(this.name);
         assertThat(field.getSize()).isEqualTo(this.size);

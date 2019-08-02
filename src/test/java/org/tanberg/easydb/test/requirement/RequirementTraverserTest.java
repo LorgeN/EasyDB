@@ -8,7 +8,7 @@ import org.tanberg.easydb.query.req.RequirementBuilder;
 import org.tanberg.easydb.query.req.SimpleRequirement;
 import org.tanberg.easydb.query.traverse.RequirementCase;
 import org.tanberg.easydb.query.traverse.RequirementTraverser;
-import org.tanberg.easydb.test.mock.item.TestItem;
+import org.tanberg.easydb.test.mock.item.SimpleFieldsItem;
 import org.tanberg.easydb.util.reflection.UtilField;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,11 +24,11 @@ import static com.google.common.truth.Truth.assertThat;
 public class RequirementTraverserTest {
 
     // Fields
-    private static final PersistentField<TestItem> ID_FIELD = new PersistentField<>(0, TestItem.class, UtilField.getField(TestItem.class, "id"));
-    private static final PersistentField<TestItem> USERNAME_FIELD = new PersistentField<>(1, TestItem.class, UtilField.getField(TestItem.class, "username"));
-    private static final PersistentField<TestItem> FIRSTNAME_FIELD = new PersistentField<>(2, TestItem.class, UtilField.getField(TestItem.class, "firstName"));
-    private static final PersistentField<TestItem> LASTNAME_FIELD = new PersistentField<>(3, TestItem.class, UtilField.getField(TestItem.class, "lastName"));
-    private static final PersistentField<TestItem> EMAIL_FIELD = new PersistentField<>(4, TestItem.class, UtilField.getField(TestItem.class, "email"));
+    private static final PersistentField<SimpleFieldsItem> ID_FIELD = new PersistentField<>(0, SimpleFieldsItem.class, UtilField.getField(SimpleFieldsItem.class, "id"));
+    private static final PersistentField<SimpleFieldsItem> USERNAME_FIELD = new PersistentField<>(1, SimpleFieldsItem.class, UtilField.getField(SimpleFieldsItem.class, "username"));
+    private static final PersistentField<SimpleFieldsItem> FIRSTNAME_FIELD = new PersistentField<>(2, SimpleFieldsItem.class, UtilField.getField(SimpleFieldsItem.class, "firstName"));
+    private static final PersistentField<SimpleFieldsItem> LASTNAME_FIELD = new PersistentField<>(3, SimpleFieldsItem.class, UtilField.getField(SimpleFieldsItem.class, "lastName"));
+    private static final PersistentField<SimpleFieldsItem> EMAIL_FIELD = new PersistentField<>(4, SimpleFieldsItem.class, UtilField.getField(SimpleFieldsItem.class, "email"));
 
     @Parameter(0)
     public QueryRequirement requirement;
@@ -47,13 +47,13 @@ public class RequirementTraverserTest {
     public static Collection<Object[]> data() {
         return Lists.newArrayList(
           new Object[]{
-            new RequirementBuilder<TestItem>(null, null).andEquals(ID_FIELD, 0).build(),
+            new RequirementBuilder<SimpleFieldsItem>(null, null).andEquals(ID_FIELD, 0).build(),
             new RequirementCase[]{
               new RequirementCase(new SimpleRequirement(ID_FIELD, Operator.EQUALS, 0))
             }
           },
           new Object[]{
-            new RequirementBuilder<TestItem>(null, null)
+            new RequirementBuilder<SimpleFieldsItem>(null, null)
               .andEquals(ID_FIELD, 0)
               .orEquals(ID_FIELD, 1)
               .build(),
@@ -63,7 +63,7 @@ public class RequirementTraverserTest {
             }
           },
           new Object[]{
-            new RequirementBuilder<TestItem>(null, null)
+            new RequirementBuilder<SimpleFieldsItem>(null, null)
               .andOpen()
               .andEquals(ID_FIELD, 0)
               .orEquals(USERNAME_FIELD, "test1")

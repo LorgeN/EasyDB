@@ -8,7 +8,7 @@ import org.tanberg.easydb.Key;
 import org.tanberg.easydb.Options;
 import org.tanberg.easydb.StoredItem;
 
-public class TestItem implements StoredItem {
+public class SimpleFieldsItem implements StoredItem {
 
     @Key(autoIncrement = true)
     private int id;
@@ -31,12 +31,12 @@ public class TestItem implements StoredItem {
     private transient int age;
 
     @DeserializerConstructor({"id", "username"})
-    public TestItem(int id, String username) {
+    public SimpleFieldsItem(int id, String username) {
         this.id = id;
         this.username = username;
     }
 
-    public TestItem(int id, String username, String firstName, String lastName, String email, int age) {
+    public SimpleFieldsItem(int id, String username, String firstName, String lastName, String email, int age) {
         this.id = id;
         this.username = username;
         this.firstName = firstName;
@@ -45,7 +45,7 @@ public class TestItem implements StoredItem {
         this.age = age;
     }
 
-    public TestItem(String username, String firstName, String lastName, String email, int age) {
+    public SimpleFieldsItem(String username, String firstName, String lastName, String email, int age) {
         this.username = username;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -103,11 +103,11 @@ public class TestItem implements StoredItem {
             return true;
         }
 
-        if (!(o instanceof TestItem)) {
+        if (!(o instanceof SimpleFieldsItem)) {
             return false;
         }
 
-        TestItem testItem = (TestItem) o;
+        SimpleFieldsItem testItem = (SimpleFieldsItem) o;
 
         return new EqualsBuilder()
           .append(id, testItem.id)
