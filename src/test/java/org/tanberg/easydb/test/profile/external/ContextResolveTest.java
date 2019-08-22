@@ -9,18 +9,19 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.tanberg.easydb.field.PersistentField;
 import org.tanberg.easydb.profile.external.strategy.ProfilerContext;
-import org.tanberg.easydb.profile.external.strategy.ProfilerStrategy;
 import org.tanberg.easydb.profile.external.strategy.StrategyHelper;
 import org.tanberg.easydb.test.mock.item.ExternalFieldItem;
-import org.tanberg.easydb.util.reflection.UtilField;
 
 import java.util.Collection;
+
+import static com.google.common.truth.Truth.assertThat;
+import static org.tanberg.easydb.util.reflection.UtilField.getField;
 
 @RunWith(Parameterized.class)
 public class ContextResolveTest {
 
-    // TODO: Test that the StrategyHelper resolves the correct context for certain scenarios
-
+    private static final Class<?> ITEM_CLASS = ExternalFieldItem.class;
+    
     @Parameter(0)
     public PersistentField<?> field;
 
@@ -30,36 +31,18 @@ public class ContextResolveTest {
     @Test
     public void testResolveContext() {
         ProfilerContext resolved = StrategyHelper.getContext(this.field);
-        Truth.assertThat(resolved).isEqualTo(this.context);
+
+        assertThat(resolved).isEqualTo(this.context);
     }
-
-    /*
-
-    @External(table = "basic_external_test", immutable = false, keyFields = "itemId")
-    private SimpleFieldsItem item;
-
-    @External(table = "list_key_external_test", immutable = false, keyFields = "name")
-    @Options(typeParams = SimpleFieldsItem.class)
-    private List<SimpleFieldsItem> list;
-
-    @External(table = "list_nokey_external_test", immutable = false)
-    @Options(typeParams = NoKeyItem.class)
-    private List<NoKeyItem> list2;
-
-    @External(table = "map_key_external_test", immutable = false)
-    @Options(typeParams = {Integer.class, SimpleFieldsItem.class})
-    private Map<Integer, SimpleFieldsItem> map;
-
-    @External(table = "map_nokey_external_test", immutable = false)
-    @Options(typeParams = {Integer.class, NoKeyItem.class})
-    private Map<Integer, NoKeyItem> map2;
-     */
 
     @Parameters
     public static Collection<Object[]> data() {
         return Lists.newArrayList(
-          new Object[]{new PersistentField<>(0, ExternalFieldItem.class, UtilField.getField(ExternalFieldItem.class, "item")), ProfilerStrategy.DIRECT_USE},
-          new Object[]{new PersistentField<>(0, ExternalFieldItem.class, UtilField.getField(ExternalFieldItem.class, "item")), ProfilerStrategy.DIRECT_USE}
+          new Object[]{new PersistentField<>(0, ITEM_CLASS, getField(ITEM_CLASS, "item")), ProfilerContext.FIELD},
+          new Object[]{new PersistentField<>(0, ITEM_CLASS, getField(ITEM_CLASS, "list")), ProfilerContext.COLLECTION},
+          new Object[]{new PersistentField<>(0, ITEM_CLASS, getField(ITEM_CLASS, "list2")), ProfilerContext.COLLECTION},
+          new Object[]{new PersistentField<>(0, ITEM_CLASS, getField(ITEM_CLASS, "map")), ProfilerContext.MAP},
+          new Object[]{new PersistentField<>(0, ITEM_CLASS, getField(ITEM_CLASS, "map2")), ProfilerContext.MAP}
         );
     }
 }

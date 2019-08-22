@@ -28,7 +28,6 @@ public class BuilderExample {
             // Alternatively we have a few methods for executing it directly from the builder which can be quite useful
 
         // PROFILE/FIELD BUILDER
-
         new ItemProfileBuilder<>(Object.class)
           .newField() // Create a new field
             .setName("Test")

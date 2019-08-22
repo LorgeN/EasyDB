@@ -14,7 +14,7 @@ public final class EasyDB {
         return CONFIGURATION;
     }
 
-    public <T> T make(Class<T> tClass) {
+    public static <T> T make(Class<T> tClass) {
         if (!tClass.isInterface()) {
             throw new IllegalArgumentException("Please provide an interface!");
         }

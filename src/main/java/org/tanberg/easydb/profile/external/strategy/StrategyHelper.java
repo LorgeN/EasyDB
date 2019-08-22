@@ -31,16 +31,17 @@ public class StrategyHelper {
     }
 
     public static ProfilerStrategy suggestStrategy(ProfilerContext context, PersistentField<?> field) {
-        Class<?> typeClass = field.getTypeClass();
-
+        Class<?> typeClass;
         switch (context) {
             case FIELD:
+                typeClass = field.getTypeClass();
                 if (!hasKeys(typeClass)) {
                     return ProfilerStrategy.DECLARING_KEYS;
                 }
 
                 return ProfilerStrategy.DIRECT_USE;
             case COLLECTION:
+                typeClass = field.getTypeParameters()[0];
                 if (!hasKeys(typeClass)) {
                     return ProfilerStrategy.DECLARING_KEYS_WITH_INDEX;
                 }
